@@ -2,5 +2,8 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/source/ffmpeg" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/source/libaom" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/source/libcodec2" vcs="Git" />
   </component>
 </project>
