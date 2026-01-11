@@ -33,7 +33,7 @@ CONFIGURE_FLAGS: list[str] = [
     "--sysroot=" + os.path.join(toolchain_path, "sysroot"),
     "--ranlib=" + os.path.join(toolchain_path, "bin", "llvm-ranlib"),
     "--strip=" + os.path.join(toolchain_path, "bin", "llvm-strip"),
-    "--pkg-config=\"pkg-config\""
+    "--pkg-config=pkg-config"
 ]
 
 if STATIC_BUILD:
@@ -219,7 +219,8 @@ def libaom() -> None:
             "-DENABLE_TESTS=OFF",
             "-DENABLE_TOOLS=OFF",
             "-DENABLE_DOCS=OFF",
-            f"-DAOM_TARGET_CPU={libaom_abi_name}"
+            f"-DAOM_TARGET_CPU={libaom_abi_name}",
+            "-DCONFIG_PIC=1"
         ])
 
     CONFIGURE_FLAGS.append("--enable-libaom")
@@ -283,11 +284,8 @@ def ffmpeg() -> None:
         flags = " ".join(abi_specific_config_flags)
         paths = ":".join(pkg_config_paths)
 
-        # tell pkg-config where to look
-        os.putenv("PKG_CONFIG_PATH", f"{paths}:{os.getenv("PKG_CONFIG_PATH")}")
-
         print(f"Configuring ffmpeg for {abi_name}")
-        if os.system(f"{configure_directory} " + flags) != 0:
+        if os.system(f"export PKG_CONFIG_PATH=\"{paths}\" && {configure_directory} " + flags) != 0:
             raise ChildProcessError(f"failed to configure ffmpeg with flags: " + "\n".join(abi_specific_config_flags))
 
         print(f"Making ffmpeg for {abi_name} at {build_directory}")
