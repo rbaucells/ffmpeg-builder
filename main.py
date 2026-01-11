@@ -5,7 +5,7 @@ from abi import ABI
 
 # config
 NDK_PATH: str = "/Users/ricardito/Library/Android/sdk/ndk/29.0.14206865"
-API: str = "21"
+API: str = "28"
 HOST: str = "darwin-x86_64"
 STATIC_BUILD: bool = True
 FFMPEG_VERSION: str = "8.0.1"
@@ -14,11 +14,13 @@ EXTERNAL_LIB_BUILD_TYPE: str = "Release"
 # library versions
 LIBAOM_VERSION: str = "3.13.1"
 AMF_VERSION: str = "1.5.0"
+AVISYNTH_VERSION: str = "3.7.5"
 
 # external libraries for ffmpeg
 EXTERNAL_LIBS: list[str] = [
-    "libaom",
-    "amf"
+    # "libaom",
+    # "amf",
+    "avisynth"
 ]
 
 toolchain_path: str = os.path.join(NDK_PATH, "toolchains", "llvm", "prebuilt", HOST)
@@ -47,10 +49,10 @@ else:
 
 # ABIS to Build for
 ABIS: list[ABI] = [
-    ABI("arm", "arm-linux-androideabi-", os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang"), os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang++")),
+    # ABI("arm", "arm-linux-androideabi-", os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang"), os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang++")),
     ABI("aarch64", "aarch64-linux-android-", os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang++")),
-    ABI("x86", "i686-linux-android-", os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang++"), ["--disable-asm", f"--x86asmexe={os.path.join(toolchain_path, "bin", "yasm")}"]),
-    ABI("x86_64", "x86_64-linux-android-", os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang++")),
+    # ABI("x86", "i686-linux-android-", os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang++"), ["--disable-asm", f"--x86asmexe={os.path.join(toolchain_path, "bin", "yasm")}"]),
+    # ABI("x86_64", "x86_64-linux-android-", os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang++")),
 ]
 
 CWD: str = os.getcwd()
@@ -127,19 +129,22 @@ def libraries() -> None:
                 libaom()
             case "amf":
                 amf()
+            case "avisynth":
+                avisynth()
+                gpl = True
             case _:
                 raise RuntimeError(f"Unsupported External Library: {lib}")
 
     # add licencing flags if needed
     if v3:
-        if input("License must be upgraded to v3 to continue. Continue? [y/n]").strip().lower() == "n":
+        if input("License must be upgraded to v3 to continue. Continue? [y/n]: ").strip().lower() == "n":
             print("Cannot continue, user refused to upgrade license to v3")
             exit(1)
 
         CONFIGURE_FLAGS.append("--enable-version3")
 
     if gpl:
-        if input("License must be upgraded to gpl to continue. Continue? [y/n]").strip().lower() == "n":
+        if input("License must be upgraded to gpl to continue. Continue? [y/n]: ").strip().lower() == "n":
             print("Cannot continue, user refused to upgrade license to gpl")
             exit(2)
 
@@ -198,6 +203,36 @@ def amf() -> None:
         abi.c_flags.append(f"-I{os.path.join(CWD, "install", "all_architectures")}")
 
     CONFIGURE_FLAGS.append("--enable-amf")
+
+def avisynth() -> None:
+    source_directory = os.path.join(CWD, "source", "avisynth")
+
+    if not os.path.exists(source_directory):
+        print(f"Cloning avisynth source code at v{AVISYNTH_VERSION}")
+        if os.system(f"git clone --branch v{AVISYNTH_VERSION} git@github.com:AviSynth/AviSynthPlus.git {source_directory}") != 0:
+            raise ChildProcessError("git clone of avisynth failed")
+
+    # loop through abis to build
+    for abi in ABIS:
+        android_abi_name = abi.android_arch_abi_name()
+
+        build_directory: str = os.path.join(CWD, "build", android_abi_name, "avisynth")
+        install_directory: str = os.path.join(CWD, "install", android_abi_name, "avisynth")
+
+        if android_abi_name == "x86_64":
+            build_using_cmake(abi, "avisynth", build_directory, install_directory, source_directory, [
+                "-DENABLE_PLUGINS=OFF",
+                "-DENABLE_CUDA=OFF",
+                "-DENABLE_INTEL_SIMD=ON"
+            ])
+        else:
+            build_using_cmake(abi, "avisynth", build_directory, install_directory, source_directory, [
+                "-DENABLE_PLUGINS=OFF",
+                "-DENABLE_CUDA=OFF",
+                "-DENABLE_INTEL_SIMD=OFF"
+            ])
+
+    CONFIGURE_FLAGS.append("--enable-avisynth")
 
 
 def ffmpeg() -> None:
