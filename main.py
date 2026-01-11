@@ -1,6 +1,8 @@
 import os
 import shutil
 
+from abi import ABI
+
 # config
 NDK_PATH: str = "/Users/ricardito/Library/Android/sdk/ndk/29.0.14206865"
 API: str = "21"
@@ -18,8 +20,6 @@ EXTERNAL_LIBS: list[str] = [
     "libaom",
     "amf"
 ]
-
-pkg_config_paths: list[str] = []
 
 toolchain_path: str = os.path.join(NDK_PATH, "toolchains", "llvm", "prebuilt", HOST)
 
@@ -44,74 +44,21 @@ else:
     CONFIGURE_FLAGS.append("--disable-static")
     CONFIGURE_FLAGS.append("--enable-shared")
 
-# added to configure flags in ffmpeg()
-C_FLAGS: list[str] = ["-O3", "-fPIC"]
-LD_FLAGS: list[str] = ["-Wl,-z,max-page-size=16384"]
 
 # ABIS to Build for
-ABIS: list[list[str]] = [
-    # [
-    #     "--arch=arm",
-    #     "--cross-prefix=arm-linux-androideabi-",
-    #     "--cc=" + os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang"),
-    #     "--cxx=" + os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang++"),
-    # ],
-    # [
-    #     "--arch=aarch64",
-    #     "--cross-prefix=aarch64-linux-android-",
-    #     "--cc=" + os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang"),
-    #     "--cxx=" + os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang++"),
-    # ],
-    # [
-    #     "--arch=x86",
-    #     "--cross-prefix=i686-linux-android-",
-    #     "--cc=" + os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang"),
-    #     "--cxx=" + os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang++"),
-    #     "--disable-asm",
-    #     "--x86asmexe=" + os.path.join(toolchain_path, "bin", "yasm")
-    # ],
-    [
-        "--arch=x86_64",
-        "--cross-prefix=x86_64-linux-android-",
-        "--cc=" + os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang"),
-        "--cxx=" + os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang++"),
-    ]
+ABIS: list[ABI] = [
+    ABI("arm", "arm-linux-androideabi-", os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang"), os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang++")),
+    ABI("aarch64", "aarch64-linux-android-", os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang++")),
+    ABI("x86", "i686-linux-android-", os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang++"), ["--disable-asm", f"--x86asmexe={os.path.join(toolchain_path, "bin", "yasm")}"]),
+    ABI("x86_64", "x86_64-linux-android-", os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang++")),
 ]
 
 CWD: str = os.getcwd()
 
 
-# armeabi-v7a, arm64-v8a, x86, x86_64
-def android_arch_abi_name(abi: list[str]) -> str:
-    match abi[0]:
-        case "--arch=arm":
-            return "armeabi-v7a"
-        case "--arch=aarch64":
-            return "arm64-v8a"
-        case "--arch=x86":
-            return "x86"
-        case "--arch=x86_64":
-            return "x86_64"
+def build_using_cmake(abi: ABI, lib_name: str, build_directory: str, install_directory: str, source_directory: str, specific_flags: list[str] | None = None) -> None:
+    abi_name: str = abi.android_arch_abi_name()
 
-    return ""
-
-
-# armv7, arm64, x86, x86_64
-def libaom_arch_abi_name(abi: list[str]) -> str:
-    match abi[0]:
-        case "--arch=arm":
-            return "armv7"
-        case "--arch=aarch64":
-            return "arm64"
-        case "--arch=x86":
-            return "x86"
-        case "--arch=x86_64":
-            return "x86_64"
-
-    return ""
-
-
-def build_using_cmake(abi_name: str, lib_name: str, build_directory: str, install_directory: str, source_directory: str, specific_flags: list[str] | None = None) -> None:
     cmake_commands: list[str] = [
         "cmake",
         f"-S {source_directory}",
@@ -153,9 +100,9 @@ def build_using_cmake(abi_name: str, lib_name: str, build_directory: str, instal
     print(f"Configured, Built, and Installed {lib_name} for {abi_name}")
 
     # tell compiler and linker of ffmpeg where to look for this library's headers and libs, and tell pkg-config where to check for .pc files
-    C_FLAGS.append(f"-I{install_directory}/include")
-    LD_FLAGS.append(f"-L{install_directory}/lib")
-    pkg_config_paths.append(os.path.join(install_directory, "lib", "pkgconfig"))
+    abi.c_flags.append(f"-I{install_directory}/include")
+    abi.ld_flags.append(f"-L{install_directory}/lib")
+    abi.pkg_config_paths.append(os.path.join(install_directory, "lib", "pkgconfig"))
 
 
 def main():
@@ -163,9 +110,11 @@ def main():
     libraries()
     ffmpeg()
 
+
 def check_dependencies():
     if os.system("pkg-config --version") != 0:
         print("pkg-config is needed to build ffmpeg")
+
 
 def libraries() -> None:
     v3: bool = False
@@ -208,13 +157,13 @@ def libaom() -> None:
 
     # loop through abis to build
     for abi in ABIS:
-        android_abi_name: str = android_arch_abi_name(abi)
-        libaom_abi_name: str = libaom_arch_abi_name(abi)
+        android_abi_name: str = abi.android_arch_abi_name()
+        libaom_abi_name: str = abi.libaom_arch_abi_name()
 
         build_directory: str = os.path.join(CWD, "build", android_abi_name, "libaom")
         install_directory: str = os.path.join(CWD, "install", android_abi_name, "libaom")
 
-        build_using_cmake(android_abi_name, "libaom", build_directory, install_directory, source_directory, [
+        build_using_cmake(abi, "libaom", build_directory, install_directory, source_directory, [
             "-DENABLE_EXAMPLES=OFF",
             "-DENABLE_TESTS=OFF",
             "-DENABLE_TOOLS=OFF",
@@ -244,7 +193,10 @@ def amf() -> None:
     shutil.copytree(src=os.path.join(source_directory, "amf", "public", "include"), dst=install_directory, dirs_exist_ok=True)
 
     print("Finished 'installing' amf")
-    C_FLAGS.append(f"-I{os.path.join(CWD, "install", "all_architectures")}")
+    # put c_flags for all abis
+    for abi in ABIS:
+        abi.c_flags.append(f"-I{os.path.join(CWD, "install", "all_architectures")}")
+
     CONFIGURE_FLAGS.append("--enable-amf")
 
 
@@ -257,19 +209,15 @@ def ffmpeg() -> None:
         if os.system(f"git clone --branch n{FFMPEG_VERSION} git@github.com:FFmpeg/FFmpeg.git {source_directory}") != 0:
             raise ChildProcessError("git clone of ffmpeg failed")
 
-    # add C_FLAGS and LD_FLAGS to config_flags
-    CONFIGURE_FLAGS.append("--extra-cflags=\"" + " ".join(C_FLAGS) + "\"")
-    CONFIGURE_FLAGS.append("--extra-ldflags=\"" + " ".join(LD_FLAGS) + "\"")
-
     # build for each abi
     for abi in ABIS:
-        abi_name: str = android_arch_abi_name(abi)
+        abi_name: str = abi.android_arch_abi_name()
 
         build_directory: str = os.path.join(CWD, "build", abi_name, "ffmpeg")
         install_directory: str = os.path.join(CWD, "install", abi_name, "ffmpeg")
 
         # CONFIGURE_FLAGS + abi-specific configure flags
-        abi_specific_config_flags: list[str] = CONFIGURE_FLAGS + abi
+        abi_specific_config_flags: list[str] = CONFIGURE_FLAGS + abi.command()
 
         # install-directory for this abi
         abi_specific_config_flags.append(f"--prefix={install_directory}")
@@ -282,7 +230,7 @@ def ffmpeg() -> None:
 
         configure_directory = f"{source_directory}/configure"
         flags = " ".join(abi_specific_config_flags)
-        paths = ":".join(pkg_config_paths)
+        paths = ":".join(abi.pkg_config_paths)
 
         print(f"Configuring ffmpeg for {abi_name}")
         if os.system(f"export PKG_CONFIG_PATH=\"{paths}\" && {configure_directory} " + flags) != 0:
