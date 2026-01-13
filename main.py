@@ -16,13 +16,15 @@ LIBAOM_VERSION: str = "3.13.1"
 AMF_VERSION: str = "1.5.0"
 AVISYNTH_VERSION: str = "3.7.5"
 CHROMAPRINT_VERSION: str = "1.6.0"
+LIBCODEC2_VERSION: str = "1.2.0"
 
 # external libraries for ffmpeg
 EXTERNAL_LIBS: list[str] = [
-    "libaom",
-    "amf",
-    "avisynth",
-    "chromaprint"
+    # "libaom",
+    # "amf",
+    # "avisynth",
+    # "chromaprint",
+    "libcodec2"
 ]
 
 toolchain_path: str = os.path.join(NDK_PATH, "toolchains", "llvm", "prebuilt", HOST)
@@ -189,6 +191,8 @@ def libraries() -> None:
                 gpl = True
             case "chromaprint":
                 chromaprint()
+            case "libcodec2":
+                libcodec2()
             case _:
                 raise RuntimeError(f"Unsupported External Library: {lib}")
 
@@ -316,6 +320,28 @@ def chromaprint() -> None:
         ])
 
     CONFIGURE_FLAGS.append("--enable-chromaprint")
+
+def libcodec2() -> None:
+    source_directory = os.path.join(CWD, "source", "libcodec2")
+
+    if not os.path.exists(source_directory):
+        print(f"Cloning libcodec2 source code at {LIBCODEC2_VERSION}")
+        if os.system(f"git clone --branch {LIBCODEC2_VERSION} git@github.com:drowe67/codec2.git {source_directory}") != 0:
+            raise ChildProcessError("git clone of libcodec2 failed")
+
+    # loop through abis to build
+    for abi in ABIS:
+        android_abi_name = abi.android_arch_abi_name()
+
+        build_directory: str = os.path.join(CWD, "build", android_abi_name, "libcodec2")
+        install_directory: str = os.path.join(CWD, "install", android_abi_name, "libcodec2")
+
+        build_using_cmake(abi, "libcodec2", build_directory, install_directory, source_directory, [
+            "-DUNITTEST=OFF"
+        ])
+
+    CONFIGURE_FLAGS.append("--enable-libcodec2")
+
 
 
 def ffmpeg() -> None:
