@@ -15,12 +15,14 @@ EXTERNAL_LIB_BUILD_TYPE: str = "Release"
 LIBAOM_VERSION: str = "3.13.1"
 AMF_VERSION: str = "1.5.0"
 AVISYNTH_VERSION: str = "3.7.5"
+CHROMAPRINT_VERSION: str = "1.6.0"
 
 # external libraries for ffmpeg
 EXTERNAL_LIBS: list[str] = [
-    # "libaom",
-    # "amf",
-    "avisynth"
+    "libaom",
+    "amf",
+    "avisynth",
+    "chromaprint"
 ]
 
 toolchain_path: str = os.path.join(NDK_PATH, "toolchains", "llvm", "prebuilt", HOST)
@@ -35,7 +37,8 @@ CONFIGURE_FLAGS: list[str] = [
     "--sysroot=" + os.path.join(toolchain_path, "sysroot"),
     "--ranlib=" + os.path.join(toolchain_path, "bin", "llvm-ranlib"),
     "--strip=" + os.path.join(toolchain_path, "bin", "llvm-strip"),
-    "--pkg-config=pkg-config"
+    "--pkg-config=pkg-config",
+    "--extra-libs=-lc++"
 ]
 
 if STATIC_BUILD:
@@ -46,19 +49,18 @@ else:
     CONFIGURE_FLAGS.append("--disable-static")
     CONFIGURE_FLAGS.append("--enable-shared")
 
-
 # ABIS to Build for
 ABIS: list[ABI] = [
     # ABI("arm", "arm-linux-androideabi-", os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang"), os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang++")),
-    ABI("aarch64", "aarch64-linux-android-", os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang++")),
+    # ABI("aarch64", "aarch64-linux-android-", os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang++")),
     # ABI("x86", "i686-linux-android-", os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang++"), ["--disable-asm", f"--x86asmexe={os.path.join(toolchain_path, "bin", "yasm")}"]),
-    # ABI("x86_64", "x86_64-linux-android-", os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang++")),
+    ABI("x86_64", "x86_64-linux-android-", os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang++"))
 ]
 
 CWD: str = os.getcwd()
 
 
-def build_using_cmake(abi: ABI, lib_name: str, build_directory: str, install_directory: str, source_directory: str, specific_flags: list[str] | None = None) -> None:
+def build_using_cmake(abi: ABI, lib_name: str, build_directory: str, install_directory: str, source_directory: str, specific_flags: list[str] | None = None, pkg_config_paths: list[str] | None = None) -> None:
     abi_name: str = abi.android_arch_abi_name()
 
     cmake_commands: list[str] = [
@@ -73,8 +75,6 @@ def build_using_cmake(abi: ABI, lib_name: str, build_directory: str, install_dir
         f"-DCMAKE_ANDROID_ARCH_ABI={abi_name}",
         f"-DCMAKE_ANDROID_API={API}",
         f"-DCMAKE_INSTALL_PREFIX={install_directory}",
-        "-DCMAKE_C_COMPILER=clang",
-        "-DCMAKE_CXX_COMPILER=clang++",
         f"-DCMAKE_BUILD_TYPE={EXTERNAL_LIB_BUILD_TYPE}",
         "-DCMAKE_POSITION_INDEPENDENT_CODE=ON"
     ]
@@ -87,12 +87,17 @@ def build_using_cmake(abi: ABI, lib_name: str, build_directory: str, install_dir
     else:
         cmake_commands.append("-DBUILD_SHARED_LIBS=ON")
 
-    print(f"Configuring {lib_name} for {abi_name} using cmake")
-    if os.system(" ".join(cmake_commands)) != 0:
-        raise ChildProcessError(f"CMake configure failed for {lib_name} ({abi_name})")
+    if pkg_config_paths is not None:
+        print(f"Configuring {lib_name} for {abi_name} using cmake")
+        if os.system(f"export PKG_CONFIG_PATH=\"{":".join(pkg_config_paths)}\" && {" ".join(cmake_commands)}") != 0:
+            raise ChildProcessError(f"CMake configure failed for {lib_name} ({abi_name})")
+    else:
+        print(f"Configuring {lib_name} for {abi_name} using cmake")
+        if os.system(" ".join(cmake_commands)) != 0:
+            raise ChildProcessError(f"CMake configure failed for {lib_name} ({abi_name})")
 
     print(f"Building {lib_name} for {abi_name} at {build_directory} using cmake")
-    if os.system(f"cmake --build {build_directory} -- -j4") != 0:
+    if os.system(f"cmake --build {build_directory} -- -j") != 0:
         raise ChildProcessError(f"Build failed for {lib_name} ({abi_name})")
 
     print(f"Installing {lib_name} for {abi_name} to {install_directory} using cmake")
@@ -109,13 +114,63 @@ def build_using_cmake(abi: ABI, lib_name: str, build_directory: str, install_dir
 
 def main():
     check_dependencies()
+    ffmpeg_libs()
     libraries()
     ffmpeg()
 
 
-def check_dependencies():
+def check_dependencies() -> None:
     if os.system("pkg-config --version") != 0:
         print("pkg-config is needed to build ffmpeg")
+
+
+def ffmpeg_libs() -> None:
+    source_directory = os.path.join(CWD, "source", "ffmpeg")
+
+    # get ffmpeg source code if not alr there
+    if not os.path.exists(source_directory):
+        print(f"Cloning ffmpeg source code at n{FFMPEG_VERSION}")
+        if os.system(f"git clone --branch n{FFMPEG_VERSION} git@github.com:FFmpeg/FFmpeg.git {source_directory}") != 0:
+            raise ChildProcessError("git clone of ffmpeg failed")
+
+    # build for each abi
+    for abi in ABIS:
+        abi_name: str = abi.android_arch_abi_name()
+
+        build_directory: str = os.path.join(CWD, "build", abi_name, "ffmpeg")
+        install_directory: str = os.path.join(CWD, "install", abi_name, "ffmpeg")
+
+        # CONFIGURE_FLAGS + abi-specific configure flags
+        abi_specific_config_flags: list[str] = CONFIGURE_FLAGS + abi.command()
+
+        # install-directory for this abi
+        abi_specific_config_flags.append(f"--prefix={install_directory}")
+        abi_specific_config_flags.append("--disable-programs")
+
+        if not os.path.exists(build_directory):
+            print(f"Making build directory for ffmpeg for {abi_name} at {build_directory}")
+            os.makedirs(build_directory)
+
+        os.chdir(build_directory)
+
+        configure_directory = f"{source_directory}/configure"
+        flags = " ".join(abi_specific_config_flags)
+
+        print(f"Configuring ffmpeg libs for {abi_name}")
+        if os.system(f"{configure_directory} " + flags) != 0:
+            raise ChildProcessError(f"failed to configure ffmpeg with flags: " + "\n".join(abi_specific_config_flags))
+
+        print(f"Making ffmpeg libs for {abi_name} at {build_directory}")
+        if os.system("make -j") != 0:
+            raise ChildProcessError(f"failed to build ffmpeg libs for {abi_name}")
+
+        print(f"Installing ffmpeg libs for {abi_name} to {install_directory}")
+        if os.system("make install") != 0:
+            raise ChildProcessError(f"failed to install ffmpeg libs for {abi_name}")
+
+        print(f"Finished Configuring, Making, Installing ffmpeg libs for {abi_name}")
+
+    print("Success, ffmpeg libs was built/installed for all enabled abis")
 
 
 def libraries() -> None:
@@ -132,6 +187,8 @@ def libraries() -> None:
             case "avisynth":
                 avisynth()
                 gpl = True
+            case "chromaprint":
+                chromaprint()
             case _:
                 raise RuntimeError(f"Unsupported External Library: {lib}")
 
@@ -204,6 +261,7 @@ def amf() -> None:
 
     CONFIGURE_FLAGS.append("--enable-amf")
 
+
 def avisynth() -> None:
     source_directory = os.path.join(CWD, "source", "avisynth")
 
@@ -233,6 +291,31 @@ def avisynth() -> None:
             ])
 
     CONFIGURE_FLAGS.append("--enable-avisynth")
+
+
+def chromaprint() -> None:
+    source_directory = os.path.join(CWD, "source", "chromaprint")
+
+    if not os.path.exists(source_directory):
+        print(f"Cloning chromaprint source code at v{CHROMAPRINT_VERSION}")
+        if os.system(f"git clone --branch v{CHROMAPRINT_VERSION} git@github.com:acoustid/chromaprint.git {source_directory}") != 0:
+            raise ChildProcessError("git clone of chromaprint failed")
+
+    # loop through abis to build
+    for abi in ABIS:
+        android_abi_name = abi.android_arch_abi_name()
+
+        build_directory: str = os.path.join(CWD, "build", android_abi_name, "chromaprint")
+        install_directory: str = os.path.join(CWD, "install", android_abi_name, "chromaprint")
+
+        build_using_cmake(abi, "chromaprint", build_directory, install_directory, source_directory, [
+            "-DBUILD_TOOLS=OFF",
+            "-DBUILD_TESTS=OFF",
+            "-DBUILD_EXAMPLES=OFF",
+            f"-DKISSFFT_SOURCE_DIR={os.path.join(source_directory, "src", "3rdparty", "kissfft")}",
+        ])
+
+    CONFIGURE_FLAGS.append("--enable-chromaprint")
 
 
 def ffmpeg() -> None:
@@ -272,7 +355,7 @@ def ffmpeg() -> None:
             raise ChildProcessError(f"failed to configure ffmpeg with flags: " + "\n".join(abi_specific_config_flags))
 
         print(f"Making ffmpeg for {abi_name} at {build_directory}")
-        if os.system("make -j4") != 0:
+        if os.system("make -j") != 0:
             raise ChildProcessError(f"failed to build ffmpeg for {abi_name}")
 
         print(f"Installing ffmpeg for {abi_name} to {install_directory}")

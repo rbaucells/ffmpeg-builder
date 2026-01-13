@@ -7,7 +7,7 @@ class ABI:
         self.extra_flags = extra_flags
 
         self.c_flags = ["-O3", "-fPIC"]
-        self.ld_flags = ["-Wl,-z,max-page-size=16384"]
+        self.ld_flags = ["-Wl,-z,max-page-size=16384", "-lm"]
         self.pkg_config_paths = []
 
 

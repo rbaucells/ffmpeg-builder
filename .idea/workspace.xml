@@ -12,8 +12,10 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="55a63d55-d4a8-4d21-92ee-ed0690307f31" name="Changes" comment="Fixes for things">
+    <list default="true" id="55a63d55-d4a8-4d21-92ee-ed0690307f31" name="Changes" comment="Added avisynth support">
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abi.py" beforeDir="false" afterPath="$PROJECT_DIR$/abi.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -35,15 +37,15 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
     <option name="ROOT_SYNC" value="DONT_SYNC" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {}
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "git@github.com:rbaucells/ffmpeg-builder.git",
-    "accountId": "654cc88e-dd87-470b-868e-660ec5ac050f"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {}
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;git@github.com:rbaucells/ffmpeg-builder.git&quot;,
+    &quot;accountId&quot;: &quot;654cc88e-dd87-470b-868e-660ec5ac050f&quot;
   }
-}]]></component>
+}</component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="go3NXhqB" />
   </component>
@@ -62,6 +64,7 @@
   "keyToString": {
     "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.abi.executor": "Run",
     "Python.main.executor": "Run",
     "RunOnceActivity.RadMigrateCodeStyle": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
@@ -132,7 +135,15 @@
       <option name="project" value="LOCAL" />
       <updated>1768112264422</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Added avisynth support">
+      <option name="closed" value="true" />
+      <created>1768155043029</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1768155043029</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -166,7 +177,8 @@
     <MESSAGE value="Changed lots of things, added amf support, fixed not configuring" />
     <MESSAGE value="Fixed some things" />
     <MESSAGE value="Fixes for things" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fixes for things" />
+    <MESSAGE value="Added avisynth support" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added avisynth support" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
