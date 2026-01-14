@@ -4,7 +4,8 @@ import shutil
 from abi import ABI
 
 # config
-NDK_PATH: str = "/Users/ricardito/Library/Android/sdk/ndk/29.0.14206865"
+NDK_VERSION: str = "29.0.14206865"
+NDK_PATH: str = f"/Users/ricardito/Library/Android/sdk/ndk/{NDK_VERSION}"
 API: str = "28"
 HOST: str = "darwin-x86_64"
 STATIC_BUILD: bool = True
@@ -17,6 +18,7 @@ AMF_VERSION: str = "1.5.0"
 AVISYNTH_VERSION: str = "3.7.5"
 CHROMAPRINT_VERSION: str = "1.6.0"
 LIBCODEC2_VERSION: str = "1.2.0"
+LIBDAV1D_VERSION: str = "1.5.3"
 
 # external libraries for ffmpeg
 EXTERNAL_LIBS: list[str] = [
@@ -24,7 +26,8 @@ EXTERNAL_LIBS: list[str] = [
     # "amf",
     # "avisynth",
     # "chromaprint",
-    "libcodec2"
+    # "libcodec2",
+    "libdav1d"
 ]
 
 toolchain_path: str = os.path.join(NDK_PATH, "toolchains", "llvm", "prebuilt", HOST)
@@ -89,12 +92,11 @@ def build_using_cmake(abi: ABI, lib_name: str, build_directory: str, install_dir
     else:
         cmake_commands.append("-DBUILD_SHARED_LIBS=ON")
 
+    print(f"Configuring {lib_name} for {abi_name} using cmake")
     if pkg_config_paths is not None:
-        print(f"Configuring {lib_name} for {abi_name} using cmake")
         if os.system(f"export PKG_CONFIG_PATH=\"{":".join(pkg_config_paths)}\" && {" ".join(cmake_commands)}") != 0:
             raise ChildProcessError(f"CMake configure failed for {lib_name} ({abi_name})")
     else:
-        print(f"Configuring {lib_name} for {abi_name} using cmake")
         if os.system(" ".join(cmake_commands)) != 0:
             raise ChildProcessError(f"CMake configure failed for {lib_name} ({abi_name})")
 
@@ -106,24 +108,102 @@ def build_using_cmake(abi: ABI, lib_name: str, build_directory: str, install_dir
     if os.system(f"cmake --install {build_directory}") != 0:
         raise ChildProcessError(f"Install failed for {lib_name} ({abi_name})")
 
-    print(f"Configured, Built, and Installed {lib_name} for {abi_name}")
+    print(f"Configured, Built, and Installed {lib_name} for {abi_name} using cmake")
 
     # tell compiler and linker of ffmpeg where to look for this library's headers and libs, and tell pkg-config where to check for .pc files
     abi.c_flags.append(f"-I{install_directory}/include")
     abi.ld_flags.append(f"-L{install_directory}/lib")
     abi.pkg_config_paths.append(os.path.join(install_directory, "lib", "pkgconfig"))
 
+def build_using_meson(abi: ABI, lib_name: str, build_directory: str, install_directory: str, source_directory: str, specific_flags: list[str] | None = None, pkg_config_paths: list[str] | None = None) -> None:
+    gen_meson_files()
+
+    cross_file = f"android-{NDK_VERSION}-"
+
+    abi_name = abi.android_arch_abi_name()
+
+    match abi_name:
+        case "armeabi-v7a":
+            cross_file += f"androideabi{API}-armv7a-cross.txt"
+        case "arm64-v8a":
+            cross_file += f"android{API}-aarch64-cross.txt"
+        case "x86":
+            cross_file += f"android{API}-i686-cross.txt"
+        case "x86_64":
+            cross_file += f"android{API}-x86_64-cross.txt"
+
+    meson_commands: list[str] = [
+        "meson",
+        "setup",
+        f"--prefix={install_directory}",
+        f"--cross-file={os.path.join(CWD, "build", "meson_cross_files", cross_file)}",
+        f"--buildtype={EXTERNAL_LIB_BUILD_TYPE.lower()}",
+        "--reconfigure"
+    ]
+
+    if STATIC_BUILD:
+        meson_commands.append("--default-library=static")
+    else:
+        meson_commands.append("--default-library=shared")
+
+    if specific_flags is not None:
+        meson_commands.extend(specific_flags)
+
+    meson_commands.extend([
+        build_directory,
+        source_directory
+    ])
+
+    print(f"Setting up {lib_name} for {abi_name} using meson")
+    if pkg_config_paths is not None:
+        if os.system(f"export PKG_CONFIG_PATH=\"{pkg_config_paths}\" && {" ".join(meson_commands)}") != 0:
+            raise ChildProcessError(f"Could not configure {lib_name} with meson")
+    else:
+        if os.system(" ".join(meson_commands)) != 0:
+            raise ChildProcessError(f"Could not configure {lib_name} with meson")
+
+    os.chdir(build_directory)
+
+    print(f"Compiling {lib_name} for {abi_name} at {build_directory} using meson")
+    if os.system("meson compile") != 0:
+        raise ChildProcessError(f"Could not compile {lib_name} at {build_directory} using meson")
+
+    print(f"Installing {lib_name} for {abi_name} to {install_directory} using meson")
+    if os.system("meson install") != 0:
+        raise ChildProcessError(f"Could not install {lib_name} to {install_directory} using meson")
+
+    print(f"Setup, Compiled, and Installed {lib_name} for {abi_name} using meson")
+
+    # tell compiler and linker of ffmpeg where to look for this library's headers and libs, and tell pkg-config where to check for .pc files
+    abi.c_flags.append(f"-I{install_directory}/include")
+    abi.ld_flags.append(f"-L{install_directory}/lib")
+    abi.pkg_config_paths.append(os.path.join(install_directory, "lib", "pkgconfig"))
+
+def gen_meson_files() -> None:
+    if os.system(f"meson env2mfile -o {os.path.join(CWD, "build", "meson_cross_files")} --android") != 0:
+        raise ChildProcessError("Could not make meson android cross files")
 
 def main():
-    check_dependencies()
+    check_pkg_config()
     ffmpeg_libs()
     libraries()
     ffmpeg()
 
 
-def check_dependencies() -> None:
+def check_pkg_config() -> None:
     if os.system("pkg-config --version") != 0:
         print("pkg-config is needed to build ffmpeg")
+        exit(4)
+
+def check_cmake() -> None:
+    if os.system("cmake --version") != 0:
+        print("cmake is not installed")
+        exit(3)
+
+def check_mason() -> None:
+    if os.system("meson --version") != 0:
+        print("cmake is not installed")
+        exit(3)
 
 
 def ffmpeg_libs() -> None:
@@ -193,6 +273,8 @@ def libraries() -> None:
                 chromaprint()
             case "libcodec2":
                 libcodec2()
+            case "libdav1d":
+                libdav1d()
             case _:
                 raise RuntimeError(f"Unsupported External Library: {lib}")
 
@@ -213,6 +295,7 @@ def libraries() -> None:
 
 
 def libaom() -> None:
+    check_cmake()
     source_directory: str = os.path.join(CWD, "source", "libaom")
 
     # get source code if it's not alr there
@@ -267,6 +350,7 @@ def amf() -> None:
 
 
 def avisynth() -> None:
+    check_cmake()
     source_directory = os.path.join(CWD, "source", "avisynth")
 
     if not os.path.exists(source_directory):
@@ -298,6 +382,7 @@ def avisynth() -> None:
 
 
 def chromaprint() -> None:
+    check_cmake()
     source_directory = os.path.join(CWD, "source", "chromaprint")
 
     if not os.path.exists(source_directory):
@@ -322,6 +407,7 @@ def chromaprint() -> None:
     CONFIGURE_FLAGS.append("--enable-chromaprint")
 
 def libcodec2() -> None:
+    check_cmake()
     source_directory = os.path.join(CWD, "source", "libcodec2")
 
     if not os.path.exists(source_directory):
@@ -342,6 +428,30 @@ def libcodec2() -> None:
 
     CONFIGURE_FLAGS.append("--enable-libcodec2")
 
+def libdav1d() -> None:
+    check_mason()
+    source_directory = os.path.join(CWD, "source", "libdav1d")
+
+    if not os.path.exists(source_directory):
+        print(f"Cloning libdav1d source code at {LIBDAV1D_VERSION}")
+        if os.system(f"git clone --branch {LIBDAV1D_VERSION} https://code.videolan.org/videolan/dav1d.git {source_directory}") != 0:
+            raise ChildProcessError("git clone of libdav1d failed")
+
+    # loop through abis to build
+    for abi in ABIS:
+        android_abi_name = abi.android_arch_abi_name()
+
+        build_directory: str = os.path.join(CWD, "build", android_abi_name, "libdav1d")
+        install_directory: str = os.path.join(CWD, "install", android_abi_name, "libdav1d")
+
+        specific_flags: list[str] = [
+            "-Dlogging=false",
+            "-Denable_tools=false"
+        ]
+
+        build_using_meson(abi, "libdav1d", build_directory, install_directory, source_directory, specific_flags)
+
+    CONFIGURE_FLAGS.append("--enable-libdav1d")
 
 
 def ffmpeg() -> None:

@@ -12,7 +12,7 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="55a63d55-d4a8-4d21-92ee-ed0690307f31" name="Changes" comment="Added chromaprint support">
+    <list default="true" id="55a63d55-d4a8-4d21-92ee-ed0690307f31" name="Changes" comment="Added libcodec2 support">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -149,7 +149,15 @@
       <option name="project" value="LOCAL" />
       <updated>1768277572576</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Added libcodec2 support">
+      <option name="closed" value="true" />
+      <created>1768309381664</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1768309381664</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -185,7 +193,8 @@
     <MESSAGE value="Fixes for things" />
     <MESSAGE value="Added avisynth support" />
     <MESSAGE value="Added chromaprint support" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added chromaprint support" />
+    <MESSAGE value="Added libcodec2 support" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added libcodec2 support" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
