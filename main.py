@@ -2,20 +2,11 @@ import shutil
 import subprocess
 
 from abi import ABI
-from dependencies import check_cmake, check_mason, check_pkg_config
+from dependencies import check_cmake, check_mason, check_pkg_config, check_gawk
 from constants import *
 import os
 
 library_flags: list[str] = []
-
-# ABIS to Build for
-ABIS: list[ABI] = [
-    ABI("arm", "arm-linux-androideabi-", os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang"), os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang++")),
-    # ABI("aarch64", "aarch64-linux-android-", os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang++")),
-    # ABI("x86", "i686-linux-android-", os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang++"), ["--disable-asm", f"--x86asmexe={os.path.join(toolchain_path, "bin", "yasm")}"]),
-    # ABI("x86_64", "x86_64-linux-android-", os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang++"))
-]
-
 
 def build_using_cmake(abi: ABI, lib_name: str, build_directory: str, install_directory: str, source_directory: str, specific_flags: list[str] | None = None, pkg_config_paths: list[str] | None = None) -> None:
     abi_name: str = abi.android_arch_abi_name()
@@ -226,6 +217,8 @@ def libraries() -> None:
                 libcodec2()
             case "libdav1d":
                 libdav1d()
+            case "libuavs3d":
+                libuavs3d()
             case _:
                 raise RuntimeError(f"Unsupported External Library: {lib}")
 
@@ -403,6 +396,31 @@ def libdav1d() -> None:
         ])
 
     library_flags.append("--enable-libdav1d")
+
+
+def libuavs3d() -> None:
+    check_gawk()
+    source_directory = os.path.join(CWD, "source", "libuavs3d")
+
+    if not os.path.exists(source_directory):
+        print(f"Cloning libuavs3d source code at v{LIBUAVS3_VERSION}")
+        if os.system(f"git clone --branch v{LIBUAVS3_VERSION} git@github.com:rbaucells/uavs3d.git {source_directory}") != 0:
+            raise ChildProcessError("git clone of libuavs3d failed")
+
+    if os.system(os.path.join(source_directory, "version.sh")) != 0:
+        raise ChildProcessError(f"libuavs3d version.sh in {source_directory} failed")
+
+    # loop through abis to build
+    for abi in ABIS:
+        android_abi_name = abi.android_arch_abi_name()
+
+        build_directory: str = os.path.join(CWD, "build", android_abi_name, "libuavs3d")
+        install_directory: str = os.path.join(CWD, "install", android_abi_name, "libuavs3d")
+
+        build_using_cmake(abi, "libuavs3d", build_directory, install_directory, source_directory, [
+            "-DCOMPILE_10BIT=1",
+            "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
+        ])
 
 
 def ffmpeg() -> None:

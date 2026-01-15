@@ -3,6 +3,8 @@ from argparse import Namespace
 import argparse
 from pathlib import Path
 
+from abi import ABI
+
 
 def get_args() -> Namespace:
     parser = argparse.ArgumentParser(description="Python script to help in building ffmpeg and related external libraries for android")
@@ -21,6 +23,7 @@ def get_args() -> Namespace:
     parser.add_argument("--chromaprint_version", type=str, default=None)
     parser.add_argument("--libcodec2_version", type=str, default=None)
     parser.add_argument("--libdav1d_version", type=str, default=None)
+    parser.add_argument("--libuavs3_version", type=str, default=None)
 
     return parser.parse_args()
 
@@ -55,17 +58,27 @@ AVISYNTH_VERSION: str = get_option(args.avisynth_version, "AVISYNTH_VERSION", "3
 CHROMAPRINT_VERSION: str = get_option(args.chromaprint_version, "CHROMAPRINT_VERSION", "1.6.0")
 LIBCODEC2_VERSION: str = get_option(args.libcodec2_version, "LIBCODEC2_VERSION", "1.2.0")
 LIBDAV1D_VERSION: str = get_option(args.libdav1d_version, "LIBDAV1D_VERSION", "1.5.3")
+LIBUAVS3_VERSION: str = get_option(args.libuavs3_version, "LIBUAVS3_VERSION", "1.2")
 
-# external libraries for ffmpeg (libdavs2 is currently broken)
+# external libraries for ffmpeg (libdavs2 and libuavs3d are currently broken)
 EXTERNAL_LIBS: list[str] = [
-    "libaom",
-    "amf",
-    "avisynth",
-    "chromaprint",
-    "libcodec2",
-    "libdav1d"
+    # "libaom",
+    # "amf",
+    # "avisynth",
+    # "chromaprint",
+    # "libcodec2",
+    # "libdav1d"
+    "libuavs3d"
 ]
 
 toolchain_path: str = os.path.join(NDK_PATH, "toolchains", "llvm", "prebuilt", HOST)
 
 CWD: str = os.getcwd()
+
+# ABIS to Build for
+ABIS: list[ABI] = [
+    ABI("arm", "arm-linux-androideabi-", os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang"), os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang++")),
+    ABI("aarch64", "aarch64-linux-android-", os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang++")),
+    ABI("x86", "i686-linux-android-", os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang++"), ["--disable-asm", f"--x86asmexe={os.path.join(toolchain_path, "bin", "yasm")}"]),
+    ABI("x86_64", "x86_64-linux-android-", os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang++"))
+]
