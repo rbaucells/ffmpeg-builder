@@ -1,0 +1,18 @@
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Get Source Code
+        uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: brew install cmake, meson, pkgconf, ninja
+
+      - name: Install Android NDK
+        run: |
+          yes | sdkmanager --install "ndk;29.0.14206865"

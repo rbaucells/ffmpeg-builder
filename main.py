@@ -1,68 +1,20 @@
-import os
 import shutil
+import subprocess
 
 from abi import ABI
+from dependencies import check_cmake, check_mason, check_pkg_config
+from constants import *
+import os
 
-# config
-NDK_VERSION: str = "29.0.14206865"
-NDK_PATH: str = f"/Users/ricardito/Library/Android/sdk/ndk/{NDK_VERSION}"
-API: str = "28"
-HOST: str = "darwin-x86_64"
-STATIC_BUILD: bool = True
-FFMPEG_VERSION: str = "8.0.1"
-EXTERNAL_LIB_BUILD_TYPE: str = "Release"
-
-# library versions
-LIBAOM_VERSION: str = "3.13.1"
-AMF_VERSION: str = "1.5.0"
-AVISYNTH_VERSION: str = "3.7.5"
-CHROMAPRINT_VERSION: str = "1.6.0"
-LIBCODEC2_VERSION: str = "1.2.0"
-LIBDAV1D_VERSION: str = "1.5.3"
-
-# external libraries for ffmpeg
-EXTERNAL_LIBS: list[str] = [
-    # "libaom",
-    # "amf",
-    # "avisynth",
-    # "chromaprint",
-    # "libcodec2",
-    "libdav1d"
-]
-
-toolchain_path: str = os.path.join(NDK_PATH, "toolchains", "llvm", "prebuilt", HOST)
-
-# passed to ./configure
-CONFIGURE_FLAGS: list[str] = [
-    # required by android building
-    "--target-os=android",
-    "--enable-cross-compile",
-    "--nm=" + os.path.join(toolchain_path, "bin", "llvm-nm"),
-    "--ar=" + os.path.join(toolchain_path, "bin", "llvm-ar"),
-    "--sysroot=" + os.path.join(toolchain_path, "sysroot"),
-    "--ranlib=" + os.path.join(toolchain_path, "bin", "llvm-ranlib"),
-    "--strip=" + os.path.join(toolchain_path, "bin", "llvm-strip"),
-    "--pkg-config=pkg-config",
-    "--extra-libs=-lc++"
-]
-
-if STATIC_BUILD:
-    CONFIGURE_FLAGS.append("--enable-static")
-    CONFIGURE_FLAGS.append("--disable-shared")
-    CONFIGURE_FLAGS.append("--pkg-config-flags=--static")
-else:
-    CONFIGURE_FLAGS.append("--disable-static")
-    CONFIGURE_FLAGS.append("--enable-shared")
+library_flags: list[str] = []
 
 # ABIS to Build for
 ABIS: list[ABI] = [
-    # ABI("arm", "arm-linux-androideabi-", os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang"), os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang++")),
+    ABI("arm", "arm-linux-androideabi-", os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang"), os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang++")),
     # ABI("aarch64", "aarch64-linux-android-", os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang++")),
     # ABI("x86", "i686-linux-android-", os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang++"), ["--disable-asm", f"--x86asmexe={os.path.join(toolchain_path, "bin", "yasm")}"]),
-    ABI("x86_64", "x86_64-linux-android-", os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang++"))
+    # ABI("x86_64", "x86_64-linux-android-", os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang++"))
 ]
-
-CWD: str = os.getcwd()
 
 
 def build_using_cmake(abi: ABI, lib_name: str, build_directory: str, install_directory: str, source_directory: str, specific_flags: list[str] | None = None, pkg_config_paths: list[str] | None = None) -> None:
@@ -92,21 +44,19 @@ def build_using_cmake(abi: ABI, lib_name: str, build_directory: str, install_dir
     else:
         cmake_commands.append("-DBUILD_SHARED_LIBS=ON")
 
-    print(f"Configuring {lib_name} for {abi_name} using cmake")
+    env = os.environ.copy()
+
     if pkg_config_paths is not None:
-        if os.system(f"export PKG_CONFIG_PATH=\"{":".join(pkg_config_paths)}\" && {" ".join(cmake_commands)}") != 0:
-            raise ChildProcessError(f"CMake configure failed for {lib_name} ({abi_name})")
-    else:
-        if os.system(" ".join(cmake_commands)) != 0:
-            raise ChildProcessError(f"CMake configure failed for {lib_name} ({abi_name})")
+        env["PKG_CONFIG_PATH"] = ":".join(pkg_config_paths)
+
+    print(f"Configuring {lib_name} for {abi_name} using cmake")
+    subprocess.run(cmake_commands, env=env, check=True)
 
     print(f"Building {lib_name} for {abi_name} at {build_directory} using cmake")
-    if os.system(f"cmake --build {build_directory} -- -j") != 0:
-        raise ChildProcessError(f"Build failed for {lib_name} ({abi_name})")
+    subprocess.run(["cmake", "--build", build_directory, "-j"], check=True)
 
     print(f"Installing {lib_name} for {abi_name} to {install_directory} using cmake")
-    if os.system(f"cmake --install {build_directory}") != 0:
-        raise ChildProcessError(f"Install failed for {lib_name} ({abi_name})")
+    subprocess.run(["cmake", "--install", build_directory], check=True)
 
     print(f"Configured, Built, and Installed {lib_name} for {abi_name} using cmake")
 
@@ -114,6 +64,7 @@ def build_using_cmake(abi: ABI, lib_name: str, build_directory: str, install_dir
     abi.c_flags.append(f"-I{install_directory}/include")
     abi.ld_flags.append(f"-L{install_directory}/lib")
     abi.pkg_config_paths.append(os.path.join(install_directory, "lib", "pkgconfig"))
+
 
 def build_using_meson(abi: ABI, lib_name: str, build_directory: str, install_directory: str, source_directory: str, specific_flags: list[str] | None = None, pkg_config_paths: list[str] | None = None) -> None:
     gen_meson_files()
@@ -154,23 +105,21 @@ def build_using_meson(abi: ABI, lib_name: str, build_directory: str, install_dir
         source_directory
     ])
 
-    print(f"Setting up {lib_name} for {abi_name} using meson")
+    env = os.environ.copy()
+
     if pkg_config_paths is not None:
-        if os.system(f"export PKG_CONFIG_PATH=\"{pkg_config_paths}\" && {" ".join(meson_commands)}") != 0:
-            raise ChildProcessError(f"Could not configure {lib_name} with meson")
-    else:
-        if os.system(" ".join(meson_commands)) != 0:
-            raise ChildProcessError(f"Could not configure {lib_name} with meson")
+        env["PKG_CONFIG_PATH"] = ":".join(pkg_config_paths)
+
+    print(f"Setting up {lib_name} for {abi_name} using meson")
+    subprocess.run(meson_commands, env=env, check=True)
 
     os.chdir(build_directory)
 
     print(f"Compiling {lib_name} for {abi_name} at {build_directory} using meson")
-    if os.system("meson compile") != 0:
-        raise ChildProcessError(f"Could not compile {lib_name} at {build_directory} using meson")
+    subprocess.run(["meson", "compile"], check=True)
 
     print(f"Installing {lib_name} for {abi_name} to {install_directory} using meson")
-    if os.system("meson install") != 0:
-        raise ChildProcessError(f"Could not install {lib_name} to {install_directory} using meson")
+    subprocess.run(["meson", "install"], check=True)
 
     print(f"Setup, Compiled, and Installed {lib_name} for {abi_name} using meson")
 
@@ -179,31 +128,17 @@ def build_using_meson(abi: ABI, lib_name: str, build_directory: str, install_dir
     abi.ld_flags.append(f"-L{install_directory}/lib")
     abi.pkg_config_paths.append(os.path.join(install_directory, "lib", "pkgconfig"))
 
+
 def gen_meson_files() -> None:
     if os.system(f"meson env2mfile -o {os.path.join(CWD, "build", "meson_cross_files")} --android") != 0:
         raise ChildProcessError("Could not make meson android cross files")
+
 
 def main():
     check_pkg_config()
     ffmpeg_libs()
     libraries()
     ffmpeg()
-
-
-def check_pkg_config() -> None:
-    if os.system("pkg-config --version") != 0:
-        print("pkg-config is needed to build ffmpeg")
-        exit(4)
-
-def check_cmake() -> None:
-    if os.system("cmake --version") != 0:
-        print("cmake is not installed")
-        exit(3)
-
-def check_mason() -> None:
-    if os.system("meson --version") != 0:
-        print("cmake is not installed")
-        exit(3)
 
 
 def ffmpeg_libs() -> None:
@@ -221,13 +156,35 @@ def ffmpeg_libs() -> None:
 
         build_directory: str = os.path.join(CWD, "build", abi_name, "ffmpeg")
         install_directory: str = os.path.join(CWD, "install", abi_name, "ffmpeg")
+        configure_directory = f"{source_directory}/configure"
 
-        # CONFIGURE_FLAGS + abi-specific configure flags
-        abi_specific_config_flags: list[str] = CONFIGURE_FLAGS + abi.command()
+        flags: list[str] = [
+                               configure_directory,
+                               "--target-os=android",
+                               "--enable-cross-compile",
+                               "--nm=" + os.path.join(toolchain_path, "bin", "llvm-nm"),
+                               "--ar=" + os.path.join(toolchain_path, "bin", "llvm-ar"),
+                               "--sysroot=" + os.path.join(toolchain_path, "sysroot"),
+                               "--ranlib=" + os.path.join(toolchain_path, "bin", "llvm-ranlib"),
+                               "--strip=" + os.path.join(toolchain_path, "bin", "llvm-strip"),
+                               "--pkg-config=pkg-config",
+                               "--extra-libs=-lc++",
+                               f"--prefix={install_directory}",
+                               "--disable-programs"
+                           ] + abi.command()
 
-        # install-directory for this abi
-        abi_specific_config_flags.append(f"--prefix={install_directory}")
-        abi_specific_config_flags.append("--disable-programs")
+        if STATIC_BUILD:
+            flags.extend([
+                "--enable-static",
+                "--disable-shared",
+                "--pkg-config-flags=--static"
+            ])
+        else:
+            flags.extend([
+                "--disable-static",
+                "--enable-shared",
+                "--pkg-config-flags=--static"
+            ])
 
         if not os.path.exists(build_directory):
             print(f"Making build directory for ffmpeg for {abi_name} at {build_directory}")
@@ -235,20 +192,14 @@ def ffmpeg_libs() -> None:
 
         os.chdir(build_directory)
 
-        configure_directory = f"{source_directory}/configure"
-        flags = " ".join(abi_specific_config_flags)
-
         print(f"Configuring ffmpeg libs for {abi_name}")
-        if os.system(f"{configure_directory} " + flags) != 0:
-            raise ChildProcessError(f"failed to configure ffmpeg with flags: " + "\n".join(abi_specific_config_flags))
+        subprocess.run(flags, check=True)
 
         print(f"Making ffmpeg libs for {abi_name} at {build_directory}")
-        if os.system("make -j") != 0:
-            raise ChildProcessError(f"failed to build ffmpeg libs for {abi_name}")
+        subprocess.run(["make", "-j"], check=True)
 
         print(f"Installing ffmpeg libs for {abi_name} to {install_directory}")
-        if os.system("make install") != 0:
-            raise ChildProcessError(f"failed to install ffmpeg libs for {abi_name}")
+        subprocess.run(["make", "install"], check=True)
 
         print(f"Finished Configuring, Making, Installing ffmpeg libs for {abi_name}")
 
@@ -284,14 +235,14 @@ def libraries() -> None:
             print("Cannot continue, user refused to upgrade license to v3")
             exit(1)
 
-        CONFIGURE_FLAGS.append("--enable-version3")
+        library_flags.append("--enable-version3")
 
     if gpl:
         if input("License must be upgraded to gpl to continue. Continue? [y/n]: ").strip().lower() == "n":
             print("Cannot continue, user refused to upgrade license to gpl")
             exit(2)
 
-        CONFIGURE_FLAGS.append("--enable-gpl")
+        library_flags.append("--enable-gpl")
 
 
 def libaom() -> None:
@@ -321,7 +272,7 @@ def libaom() -> None:
             "-DCONFIG_PIC=1"
         ])
 
-    CONFIGURE_FLAGS.append("--enable-libaom")
+    library_flags.append("--enable-libaom")
 
 
 def amf() -> None:
@@ -346,7 +297,7 @@ def amf() -> None:
     for abi in ABIS:
         abi.c_flags.append(f"-I{os.path.join(CWD, "install", "all_architectures")}")
 
-    CONFIGURE_FLAGS.append("--enable-amf")
+    library_flags.append("--enable-amf")
 
 
 def avisynth() -> None:
@@ -378,7 +329,7 @@ def avisynth() -> None:
                 "-DENABLE_INTEL_SIMD=OFF"
             ])
 
-    CONFIGURE_FLAGS.append("--enable-avisynth")
+    library_flags.append("--enable-avisynth")
 
 
 def chromaprint() -> None:
@@ -404,7 +355,8 @@ def chromaprint() -> None:
             f"-DKISSFFT_SOURCE_DIR={os.path.join(source_directory, "src", "3rdparty", "kissfft")}",
         ])
 
-    CONFIGURE_FLAGS.append("--enable-chromaprint")
+    library_flags.append("--enable-chromaprint")
+
 
 def libcodec2() -> None:
     check_cmake()
@@ -426,7 +378,8 @@ def libcodec2() -> None:
             "-DUNITTEST=OFF"
         ])
 
-    CONFIGURE_FLAGS.append("--enable-libcodec2")
+    library_flags.append("--enable-libcodec2")
+
 
 def libdav1d() -> None:
     check_mason()
@@ -444,14 +397,12 @@ def libdav1d() -> None:
         build_directory: str = os.path.join(CWD, "build", android_abi_name, "libdav1d")
         install_directory: str = os.path.join(CWD, "install", android_abi_name, "libdav1d")
 
-        specific_flags: list[str] = [
+        build_using_meson(abi, "libdav1d", build_directory, install_directory, source_directory, [
             "-Dlogging=false",
             "-Denable_tools=false"
-        ]
+        ])
 
-        build_using_meson(abi, "libdav1d", build_directory, install_directory, source_directory, specific_flags)
-
-    CONFIGURE_FLAGS.append("--enable-libdav1d")
+    library_flags.append("--enable-libdav1d")
 
 
 def ffmpeg() -> None:
@@ -469,12 +420,33 @@ def ffmpeg() -> None:
 
         build_directory: str = os.path.join(CWD, "build", abi_name, "ffmpeg")
         install_directory: str = os.path.join(CWD, "install", abi_name, "ffmpeg")
+        configure_directory = f"{source_directory}/configure"
 
-        # CONFIGURE_FLAGS + abi-specific configure flags
-        abi_specific_config_flags: list[str] = CONFIGURE_FLAGS + abi.command()
+        flags: list[str] = [
+                               configure_directory,
+                               "--target-os=android",
+                               "--enable-cross-compile",
+                               "--nm=" + os.path.join(toolchain_path, "bin", "llvm-nm"),
+                               "--ar=" + os.path.join(toolchain_path, "bin", "llvm-ar"),
+                               "--sysroot=" + os.path.join(toolchain_path, "sysroot"),
+                               "--ranlib=" + os.path.join(toolchain_path, "bin", "llvm-ranlib"),
+                               "--strip=" + os.path.join(toolchain_path, "bin", "llvm-strip"),
+                               "--pkg-config=pkg-config",
+                               "--extra-libs=-lc++",
+                               f"--prefix={install_directory}"
+                           ] + abi.command()
 
-        # install-directory for this abi
-        abi_specific_config_flags.append(f"--prefix={install_directory}")
+        if STATIC_BUILD:
+            flags.extend([
+                "--enable-static",
+                "--disable-shared",
+                "--pkg-config-flags=--static"
+            ])
+        else:
+            flags.extend([
+                "--disable-static",
+                "--enable-shared"
+            ])
 
         if not os.path.exists(build_directory):
             print(f"Making build directory for ffmpeg for {abi_name} at {build_directory}")
@@ -482,21 +454,19 @@ def ffmpeg() -> None:
 
         os.chdir(build_directory)
 
-        configure_directory = f"{source_directory}/configure"
-        flags = " ".join(abi_specific_config_flags)
-        paths = ":".join(abi.pkg_config_paths)
+        env = os.environ.copy()
+
+        if abi.pkg_config_paths is not None:
+            env["PKG_CONFIG_PATH"] = ":".join(abi.pkg_config_paths)
 
         print(f"Configuring ffmpeg for {abi_name}")
-        if os.system(f"export PKG_CONFIG_PATH=\"{paths}\" && {configure_directory} " + flags) != 0:
-            raise ChildProcessError(f"failed to configure ffmpeg with flags: " + "\n".join(abi_specific_config_flags))
+        subprocess.run(flags, env=env, check=True)
 
         print(f"Making ffmpeg for {abi_name} at {build_directory}")
-        if os.system("make -j") != 0:
-            raise ChildProcessError(f"failed to build ffmpeg for {abi_name}")
+        subprocess.run(["make", "-j"], check=True)
 
         print(f"Installing ffmpeg for {abi_name} to {install_directory}")
-        if os.system("make install") != 0:
-            raise ChildProcessError(f"failed to install ffmpeg for {abi_name}")
+        subprocess.run(["make", "install"], check=True)
 
         print(f"Finished Configuring, Making, Installing ffmpeg for {abi_name}")
 

@@ -17,9 +17,8 @@ class ABI:
             f"--cross-prefix={self.cross_prefix}",
             f"--cc={self.cc}",
             f"--cxx={self.cxx}",
-            f"--extra-cflags=\"{" ".join(self.c_flags)}\"",
-            f"--extra-ldflags=\"{" ".join(self.ld_flags)}\"",
-            f"--extra-ldflags=\"{" ".join(self.ld_flags)}\""
+            f"--extra-cflags={" ".join(self.c_flags)}",
+            f"--extra-ldflags={" ".join(self.ld_flags)}"
         ]
 
         if self.extra_flags is not None:
