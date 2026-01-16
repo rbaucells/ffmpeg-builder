@@ -24,6 +24,7 @@ def get_args() -> Namespace:
     parser.add_argument("--libcodec2_version", type=str, default=None)
     parser.add_argument("--libdav1d_version", type=str, default=None)
     parser.add_argument("--libuavs3_version", type=str, default=None)
+    parser.add_argument("--libdavs2_version", type=str, default=None)
 
     return parser.parse_args()
 
@@ -59,16 +60,18 @@ CHROMAPRINT_VERSION: str = get_option(args.chromaprint_version, "CHROMAPRINT_VER
 LIBCODEC2_VERSION: str = get_option(args.libcodec2_version, "LIBCODEC2_VERSION", "1.2.0")
 LIBDAV1D_VERSION: str = get_option(args.libdav1d_version, "LIBDAV1D_VERSION", "1.5.3")
 LIBUAVS3_VERSION: str = get_option(args.libuavs3_version, "LIBUAVS3_VERSION", "1.2")
+LIBDAVS2_VERSION: str = get_option(args.libdavs2_version, "LIBDAVS2_VERSION", "1.7")
 
 # external libraries for ffmpeg (libdavs2 and libuavs3d are currently broken)
 EXTERNAL_LIBS: list[str] = [
-    # "libaom",
-    # "amf",
-    # "avisynth",
-    # "chromaprint",
-    # "libcodec2",
-    # "libdav1d"
-    "libuavs3d"
+    "libaom",
+    "amf",
+    "avisynth",
+    "chromaprint",
+    "libcodec2",
+    "libdav1d",
+    "libuavs3d",
+    "libdavs2"
 ]
 
 toolchain_path: str = os.path.join(NDK_PATH, "toolchains", "llvm", "prebuilt", HOST)

@@ -133,7 +133,7 @@ def main():
 
 
 def ffmpeg_libs() -> None:
-    source_directory = os.path.join(CWD, "source", "ffmpeg")
+    source_directory: str = os.path.join(CWD, "source", "ffmpeg")
 
     # get ffmpeg source code if not alr there
     if not os.path.exists(source_directory):
@@ -149,7 +149,7 @@ def ffmpeg_libs() -> None:
         install_directory: str = os.path.join(CWD, "install", abi_name, "ffmpeg")
         configure_directory = f"{source_directory}/configure"
 
-        flags: list[str] = [
+        configure_commands: list[str] = [
                                configure_directory,
                                "--target-os=android",
                                "--enable-cross-compile",
@@ -165,13 +165,13 @@ def ffmpeg_libs() -> None:
                            ] + abi.command()
 
         if STATIC_BUILD:
-            flags.extend([
+            configure_commands.extend([
                 "--enable-static",
                 "--disable-shared",
                 "--pkg-config-flags=--static"
             ])
         else:
-            flags.extend([
+            configure_commands.extend([
                 "--disable-static",
                 "--enable-shared",
                 "--pkg-config-flags=--static"
@@ -184,7 +184,7 @@ def ffmpeg_libs() -> None:
         os.chdir(build_directory)
 
         print(f"Configuring ffmpeg libs for {abi_name}")
-        subprocess.run(flags, check=True)
+        subprocess.run(configure_commands, check=True)
 
         print(f"Making ffmpeg libs for {abi_name} at {build_directory}")
         subprocess.run(["make", "-j"], check=True)
@@ -219,6 +219,9 @@ def libraries() -> None:
                 libdav1d()
             case "libuavs3d":
                 libuavs3d()
+            case "libdavs2":
+                libdavs2()
+                gpl = True
             case _:
                 raise RuntimeError(f"Unsupported External Library: {lib}")
 
@@ -269,7 +272,7 @@ def libaom() -> None:
 
 
 def amf() -> None:
-    source_directory = os.path.join(CWD, "source", "amf")
+    source_directory: str = os.path.join(CWD, "source", "amf")
 
     # get ffmpeg source code if not alr there
     if not os.path.exists(source_directory):
@@ -295,7 +298,7 @@ def amf() -> None:
 
 def avisynth() -> None:
     check_cmake()
-    source_directory = os.path.join(CWD, "source", "avisynth")
+    source_directory: str = os.path.join(CWD, "source", "avisynth")
 
     if not os.path.exists(source_directory):
         print(f"Cloning avisynth source code at v{AVISYNTH_VERSION}")
@@ -327,7 +330,7 @@ def avisynth() -> None:
 
 def chromaprint() -> None:
     check_cmake()
-    source_directory = os.path.join(CWD, "source", "chromaprint")
+    source_directory: str = os.path.join(CWD, "source", "chromaprint")
 
     if not os.path.exists(source_directory):
         print(f"Cloning chromaprint source code at v{CHROMAPRINT_VERSION}")
@@ -353,7 +356,7 @@ def chromaprint() -> None:
 
 def libcodec2() -> None:
     check_cmake()
-    source_directory = os.path.join(CWD, "source", "libcodec2")
+    source_directory: str = os.path.join(CWD, "source", "libcodec2")
 
     if not os.path.exists(source_directory):
         print(f"Cloning libcodec2 source code at {LIBCODEC2_VERSION}")
@@ -376,7 +379,7 @@ def libcodec2() -> None:
 
 def libdav1d() -> None:
     check_mason()
-    source_directory = os.path.join(CWD, "source", "libdav1d")
+    source_directory: str = os.path.join(CWD, "source", "libdav1d")
 
     if not os.path.exists(source_directory):
         print(f"Cloning libdav1d source code at {LIBDAV1D_VERSION}")
@@ -400,7 +403,7 @@ def libdav1d() -> None:
 
 def libuavs3d() -> None:
     check_gawk()
-    source_directory = os.path.join(CWD, "source", "libuavs3d")
+    source_directory: str = os.path.join(CWD, "source", "libuavs3d")
 
     if not os.path.exists(source_directory):
         print(f"Cloning libuavs3d source code at v{LIBUAVS3_VERSION}")
@@ -422,9 +425,69 @@ def libuavs3d() -> None:
             "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
         ])
 
+def libdavs2() -> None:
+    source_directory: str = os.path.join(CWD, "source", "libdavs2")
+
+    if not os.path.exists(source_directory):
+        # print(f"Cloning libdavs2 source code at {LIBDAVS2_VERSION}")
+        print(f"Cloning libdavs2 source code")
+        # if os.system(f"git clone --branch {LIBDAVS2_VERSION} git@github.com:rbaucells/davs2.git {source_directory}") != 0:
+        #     raise ChildProcessError("git clone of libdavs2 failed")
+        if os.system(f"git clone git@github.com:rbaucells/davs2.git {source_directory}") != 0:
+            raise ChildProcessError("git clone of libdavs2 failed")
+
+
+    # loop through abis to build
+    for abi in ABIS:
+        android_abi_name = abi.android_arch_abi_name()
+
+        build_directory: str = os.path.join(CWD, "build", android_abi_name, "libdavs2")
+        install_directory: str = os.path.join(CWD, "install", android_abi_name, "libdavs2")
+        configure_directory: str = f"{os.path.join(source_directory, "build", "linux")}/configure"
+
+        configure_commands: list[str] = [
+            configure_directory,
+            "--enable-pic",
+            "--enable-strip",
+            f"--host={abi.cross_prefix.rstrip('-')}",
+            f"--sysroot={os.path.join(toolchain_path, "sysroot")}",
+            "--disable-cli",
+            "--disable-asm",
+            f"--prefix={install_directory}",
+            f"--extra-cflags={" ".join(abi.c_flags)}",
+            f"--extra-ldflags={" ".join(abi.ld_flags)}"
+        ]
+
+        env = os.environ.copy()
+
+        env.update({
+            "CC": abi.cc,
+            "CXX": abi.cxx,
+            "AS": os.path.join(toolchain_path, "bin", "llvm-as"),
+            "AR": os.path.join(toolchain_path, "bin", "llvm-ar"),
+            "STRIP": os.path.join(toolchain_path, "bin", "llvm-strip"),
+            "RANLIB": os.path.join(toolchain_path, "bin", "llvm-ranlib"),
+            "PKGCONFIG": "pkg-config",
+            "TOP_SRCPATH": source_directory,
+            "BUILDPATH": build_directory
+        })
+
+        print(f"Configuring libdavs2 for {android_abi_name}")
+        subprocess.run(configure_commands, env=env, check=True)
+
+        os.chdir(build_directory)
+
+        print(f"Making libdavs2 for {android_abi_name} at {build_directory}")
+        subprocess.run(["make", "-j"], check=True)
+
+        print(f"Installing libdavs2 for {android_abi_name} to {install_directory}")
+        subprocess.run(["make", "install"], check=True)
+
+        print(f"Finished Configuring, Making, Installing libdavs2 for {android_abi_name}")
+
 
 def ffmpeg() -> None:
-    source_directory = os.path.join(CWD, "source", "ffmpeg")
+    source_directory: str = os.path.join(CWD, "source", "ffmpeg")
 
     # get ffmpeg source code if not alr there
     if not os.path.exists(source_directory):
@@ -440,7 +503,7 @@ def ffmpeg() -> None:
         install_directory: str = os.path.join(CWD, "install", abi_name, "ffmpeg")
         configure_directory = f"{source_directory}/configure"
 
-        flags: list[str] = [
+        configure_commands: list[str] = [
                                configure_directory,
                                "--target-os=android",
                                "--enable-cross-compile",
@@ -455,13 +518,13 @@ def ffmpeg() -> None:
                            ] + abi.command()
 
         if STATIC_BUILD:
-            flags.extend([
+            configure_commands.extend([
                 "--enable-static",
                 "--disable-shared",
                 "--pkg-config-flags=--static"
             ])
         else:
-            flags.extend([
+            configure_commands.extend([
                 "--disable-static",
                 "--enable-shared"
             ])
@@ -478,7 +541,7 @@ def ffmpeg() -> None:
             env["PKG_CONFIG_PATH"] = ":".join(abi.pkg_config_paths)
 
         print(f"Configuring ffmpeg for {abi_name}")
-        subprocess.run(flags, env=env, check=True)
+        subprocess.run(configure_commands, env=env, check=True)
 
         print(f"Making ffmpeg for {abi_name} at {build_directory}")
         subprocess.run(["make", "-j"], check=True)
