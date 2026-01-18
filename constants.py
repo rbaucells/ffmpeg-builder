@@ -25,6 +25,10 @@ def get_args() -> Namespace:
     parser.add_argument("--libdav1d_version", type=str, default=None)
     parser.add_argument("--libuavs3_version", type=str, default=None)
     parser.add_argument("--libdavs2_version", type=str, default=None)
+    parser.add_argument("--libgme_version", type=str, default=None)
+    parser.add_argument("--libmfx_version", type=str, default=None)
+    parser.add_argument("--libkvazaar_version", type=str, default=None)
+    parser.add_argument("--auto_accept_licence", type=str, default=None)
 
     return parser.parse_args()
 
@@ -60,9 +64,16 @@ CHROMAPRINT_VERSION: str = get_option(args.chromaprint_version, "CHROMAPRINT_VER
 LIBCODEC2_VERSION: str = get_option(args.libcodec2_version, "LIBCODEC2_VERSION", "1.2.0")
 LIBDAV1D_VERSION: str = get_option(args.libdav1d_version, "LIBDAV1D_VERSION", "1.5.3")
 LIBUAVS3_VERSION: str = get_option(args.libuavs3_version, "LIBUAVS3_VERSION", "1.2")
-LIBDAVS2_VERSION: str = get_option(args.libdavs2_version, "LIBDAVS2_VERSION", "1.7")
+LIBDAVS2_VERSION: str = get_option(args.libdavs2_version, "LIBDAVS2_VERSION", "1.8")
+LIBGME_VERSION: str = get_option(args.libgme_version, "LIBGME_VERSION", "0.6.4")
+LIBMFX_VERSION: str = get_option(args.libmfx_version, "LIBMFX_VERSION", "1.35.1")
+LIBKVAZAAR_VERSION: str = get_option(args.libkvazaar_version, "LIBKVAZAAR_VERSION", "2.3.2")
 
-# external libraries for ffmpeg (libdavs2 and libuavs3d are currently broken)
+# options
+AUTO_ACCEPT_LICENCE: bool = get_option(args.auto_accept_licence, "AUTO_ACCEPT_LICENCE", "yes").lower() in ["yes", "on", "1", "y"]
+
+
+# external libraries for ffmpeg (libxavs2 is currently completely broken, I tried to fix it like I did libdavs2 and libuavs3d but to no avail)
 EXTERNAL_LIBS: list[str] = [
     "libaom",
     "amf",
@@ -71,7 +82,9 @@ EXTERNAL_LIBS: list[str] = [
     "libcodec2",
     "libdav1d",
     "libuavs3d",
-    "libdavs2"
+    "libdavs2",
+    "libgme",
+    "libkvazaar"
 ]
 
 toolchain_path: str = os.path.join(NDK_PATH, "toolchains", "llvm", "prebuilt", HOST)
@@ -81,7 +94,7 @@ CWD: str = os.getcwd()
 # ABIS to Build for
 ABIS: list[ABI] = [
     ABI("arm", "arm-linux-androideabi-", os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang"), os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang++")),
-    ABI("aarch64", "aarch64-linux-android-", os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang++")),
-    ABI("x86", "i686-linux-android-", os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang++"), ["--disable-asm", f"--x86asmexe={os.path.join(toolchain_path, "bin", "yasm")}"]),
-    ABI("x86_64", "x86_64-linux-android-", os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang++"))
+    # ABI("aarch64", "aarch64-linux-android-", os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang++")),
+    # ABI("x86", "i686-linux-android-", os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang++"), ["--disable-asm", f"--x86asmexe={os.path.join(toolchain_path, "bin", "yasm")}"]),
+    # ABI("x86_64", "x86_64-linux-android-", os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang++"))
 ]

@@ -1,11 +1,13 @@
 import shutil
 import subprocess
+import threading
 
 from abi import ABI
 from dependencies import check_cmake, check_mason, check_pkg_config, check_gawk
 from constants import *
 import os
 
+library_flags_lock = threading.Lock()
 library_flags: list[str] = []
 
 def build_using_cmake(abi: ABI, lib_name: str, build_directory: str, install_directory: str, source_directory: str, specific_flags: list[str] | None = None, pkg_config_paths: list[str] | None = None) -> None:
@@ -52,9 +54,10 @@ def build_using_cmake(abi: ABI, lib_name: str, build_directory: str, install_dir
     print(f"Configured, Built, and Installed {lib_name} for {abi_name} using cmake")
 
     # tell compiler and linker of ffmpeg where to look for this library's headers and libs, and tell pkg-config where to check for .pc files
-    abi.c_flags.append(f"-I{install_directory}/include")
-    abi.ld_flags.append(f"-L{install_directory}/lib")
-    abi.pkg_config_paths.append(os.path.join(install_directory, "lib", "pkgconfig"))
+    with abi.c_flags_lock, abi.ld_flags_lock, abi.pkg_config_paths_lock:
+        abi.c_flags.append(f"-I{install_directory}/include")
+        abi.ld_flags.append(f"-L{install_directory}/lib")
+        abi.pkg_config_paths.append(os.path.join(install_directory, "lib", "pkgconfig"))
 
 
 def build_using_meson(abi: ABI, lib_name: str, build_directory: str, install_directory: str, source_directory: str, specific_flags: list[str] | None = None, pkg_config_paths: list[str] | None = None) -> None:
@@ -115,9 +118,10 @@ def build_using_meson(abi: ABI, lib_name: str, build_directory: str, install_dir
     print(f"Setup, Compiled, and Installed {lib_name} for {abi_name} using meson")
 
     # tell compiler and linker of ffmpeg where to look for this library's headers and libs, and tell pkg-config where to check for .pc files
-    abi.c_flags.append(f"-I{install_directory}/include")
-    abi.ld_flags.append(f"-L{install_directory}/lib")
-    abi.pkg_config_paths.append(os.path.join(install_directory, "lib", "pkgconfig"))
+    with abi.c_flags_lock, abi.ld_flags_lock, abi.pkg_config_paths_lock:
+        abi.c_flags.append(f"-I{install_directory}/include")
+        abi.ld_flags.append(f"-L{install_directory}/lib")
+        abi.pkg_config_paths.append(os.path.join(install_directory, "lib", "pkgconfig"))
 
 
 def gen_meson_files() -> None:
@@ -127,7 +131,7 @@ def gen_meson_files() -> None:
 
 def main():
     check_pkg_config()
-    ffmpeg_libs()
+    # ffmpeg_libs()
     libraries()
     ffmpeg()
 
@@ -222,23 +226,30 @@ def libraries() -> None:
             case "libdavs2":
                 libdavs2()
                 gpl = True
+            case "libgme":
+                libgme()
+            case "libkvazaar":
+                libkvazaar()
             case _:
                 raise RuntimeError(f"Unsupported External Library: {lib}")
 
+
     # add licencing flags if needed
     if v3:
-        if input("License must be upgraded to v3 to continue. Continue? [y/n]: ").strip().lower() == "n":
+        if not AUTO_ACCEPT_LICENCE or input("License must be upgraded to v3 to continue. Continue? [y/n]: ").strip().lower() == "n":
             print("Cannot continue, user refused to upgrade license to v3")
             exit(1)
 
-        library_flags.append("--enable-version3")
+        with library_flags_lock:
+            library_flags.append("--enable-version3")
 
     if gpl:
-        if input("License must be upgraded to gpl to continue. Continue? [y/n]: ").strip().lower() == "n":
+        if not AUTO_ACCEPT_LICENCE or input("License must be upgraded to gpl to continue. Continue? [y/n]: ").strip().lower() == "n":
             print("Cannot continue, user refused to upgrade license to gpl")
             exit(2)
 
-        library_flags.append("--enable-gpl")
+        with library_flags_lock:
+            library_flags.append("--enable-gpl")
 
 
 def libaom() -> None:
@@ -268,7 +279,8 @@ def libaom() -> None:
             "-DCONFIG_PIC=1"
         ])
 
-    library_flags.append("--enable-libaom")
+    with library_flags_lock:
+        library_flags.append("--enable-libaom")
 
 
 def amf() -> None:
@@ -293,7 +305,8 @@ def amf() -> None:
     for abi in ABIS:
         abi.c_flags.append(f"-I{os.path.join(CWD, "install", "all_architectures")}")
 
-    library_flags.append("--enable-amf")
+    with library_flags_lock:
+        library_flags.append("--enable-amf")
 
 
 def avisynth() -> None:
@@ -325,7 +338,8 @@ def avisynth() -> None:
                 "-DENABLE_INTEL_SIMD=OFF"
             ])
 
-    library_flags.append("--enable-avisynth")
+    with library_flags_lock:
+        library_flags.append("--enable-avisynth")
 
 
 def chromaprint() -> None:
@@ -351,7 +365,8 @@ def chromaprint() -> None:
             f"-DKISSFFT_SOURCE_DIR={os.path.join(source_directory, "src", "3rdparty", "kissfft")}",
         ])
 
-    library_flags.append("--enable-chromaprint")
+    with library_flags_lock:
+        library_flags.append("--enable-chromaprint")
 
 
 def libcodec2() -> None:
@@ -374,7 +389,8 @@ def libcodec2() -> None:
             "-DUNITTEST=OFF"
         ])
 
-    library_flags.append("--enable-libcodec2")
+    with library_flags_lock:
+        library_flags.append("--enable-libcodec2")
 
 
 def libdav1d() -> None:
@@ -398,7 +414,8 @@ def libdav1d() -> None:
             "-Denable_tools=false"
         ])
 
-    library_flags.append("--enable-libdav1d")
+    with library_flags_lock:
+        library_flags.append("--enable-libdav1d")
 
 
 def libuavs3d() -> None:
@@ -425,15 +442,15 @@ def libuavs3d() -> None:
             "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
         ])
 
+    with library_flags_lock:
+        library_flags.append("--enable-libuavs3d")
+
 def libdavs2() -> None:
     source_directory: str = os.path.join(CWD, "source", "libdavs2")
 
     if not os.path.exists(source_directory):
-        # print(f"Cloning libdavs2 source code at {LIBDAVS2_VERSION}")
-        print(f"Cloning libdavs2 source code")
-        # if os.system(f"git clone --branch {LIBDAVS2_VERSION} git@github.com:rbaucells/davs2.git {source_directory}") != 0:
-        #     raise ChildProcessError("git clone of libdavs2 failed")
-        if os.system(f"git clone git@github.com:rbaucells/davs2.git {source_directory}") != 0:
+        print(f"Cloning libdavs2 source code at {LIBDAVS2_VERSION}")
+        if os.system(f"git clone --branch {LIBDAVS2_VERSION} git@github.com:rbaucells/davs2.git {source_directory}") != 0:
             raise ChildProcessError("git clone of libdavs2 failed")
 
 
@@ -483,7 +500,83 @@ def libdavs2() -> None:
         print(f"Installing libdavs2 for {android_abi_name} to {install_directory}")
         subprocess.run(["make", "install"], check=True)
 
+        # tell compiler and linker of ffmpeg where to look for this library's headers and libs, and tell pkg-config where to check for .pc files
+        with abi.c_flags_lock, abi.ld_flags_lock, abi.pkg_config_paths_lock:
+            abi.c_flags.append(f"-I{install_directory}/include")
+            abi.ld_flags.append(f"-L{install_directory}/lib")
+            abi.pkg_config_paths.append(os.path.join(install_directory, "lib", "pkgconfig"))
+
         print(f"Finished Configuring, Making, Installing libdavs2 for {android_abi_name}")
+
+    with library_flags_lock:
+        library_flags.append("--enable-libdavs2")
+
+def libgme() -> None:
+    source_directory: str = os.path.join(CWD, "source", "libgme")
+
+    if not os.path.exists(source_directory):
+        print(f"Cloning libgme source code at {LIBGME_VERSION}")
+        if os.system(f"git clone --branch {LIBGME_VERSION} git@github.com:libgme/game-music-emu.git {source_directory}") != 0:
+            raise ChildProcessError("git clone of libgme failed")
+
+    # loop through abis to build
+    for abi in ABIS:
+        android_abi_name = abi.android_arch_abi_name()
+
+        build_directory: str = os.path.join(CWD, "build", android_abi_name, "libgme")
+        install_directory: str = os.path.join(CWD, "install", android_abi_name, "libgme")
+
+        build_using_cmake(abi, "libgme", build_directory, install_directory, source_directory, [
+            "-DGME_BUILD_TESTING=OFF",
+            "-DGME_BUILD_EXAMPLES=OFF"
+        ])
+
+    with library_flags_lock:
+        library_flags.append("--enable-libgme")
+
+def libmfx() -> None:
+    source_directory: str = os.path.join(CWD, "source", "libmfx")
+
+    if not os.path.exists(source_directory):
+        print(f"Cloning libmfx source code at {LIBMFX_VERSION}")
+        if os.system(f"git clone --branch {LIBMFX_VERSION} git@github.com:lu-zero/mfx_dispatch.git {source_directory}") != 0:
+            raise ChildProcessError("git clone of libmfx failed")
+
+    # loop through abis to build
+    for abi in ABIS:
+        android_abi_name = abi.android_arch_abi_name()
+
+        build_directory: str = os.path.join(CWD, "build", android_abi_name, "libmfx")
+        install_directory: str = os.path.join(CWD, "install", android_abi_name, "libmfx")
+
+        build_using_cmake(abi, "libmfx", build_directory, install_directory, source_directory, None)
+
+    with library_flags_lock:
+        library_flags.append("--enable-libmfx")
+
+def libkvazaar() -> None:
+    source_directory: str = os.path.join(CWD, "source", "libkvazaar")
+
+    if not os.path.exists(source_directory):
+        print(f"Cloning libkvazaar source code at v{LIBKVAZAAR_VERSION}")
+        if os.system(f"git clone --branch v{LIBKVAZAAR_VERSION} git@github.com:ultravideo/kvazaar.git {source_directory}") != 0:
+            raise ChildProcessError("git clone of libkvazaar failed")
+
+    # loop through abis to build
+    for abi in ABIS:
+        android_abi_name = abi.android_arch_abi_name()
+
+        build_directory: str = os.path.join(CWD, "build", android_abi_name, "libkvazaar")
+        install_directory: str = os.path.join(CWD, "install", android_abi_name, "libkvazaar")
+
+        build_using_cmake(abi, "libkvazaar", build_directory, install_directory, source_directory, [
+            "-DBUILD_TESTS=OFF",
+            "-DBUILD_KVAZAAR_BINARY=OFF",
+            "-DCRYPTOPP_BUILD_TESTING=OFF"
+        ])
+
+    with library_flags_lock:
+        library_flags.append("--enable-libkvazaar")
 
 
 def ffmpeg() -> None:
@@ -515,7 +608,7 @@ def ffmpeg() -> None:
                                "--pkg-config=pkg-config",
                                "--extra-libs=-lc++",
                                f"--prefix={install_directory}"
-                           ] + abi.command()
+                           ] + abi.command() + library_flags
 
         if STATIC_BUILD:
             configure_commands.extend([
