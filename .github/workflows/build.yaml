@@ -9,7 +9,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install dependencies
-        run: brew install cmake, meson, pkgconf, ninja, python
+        run: brew install cmake meson pkgconf ninja python
 
       - name: Install Android NDK
         env:
