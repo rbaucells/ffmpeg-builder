@@ -2,58 +2,50 @@ on:
     workflow_dispatch:
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Get Source Code
         uses: actions/checkout@v6
 
       - name: Install dependencies
-        run: brew install cmake meson pkgconf ninja python
-
-      - name: Download Android NDK Install Android NDK
-        env:
-          NDK_RELEASE: "r29"
         run: |
-            URL="https://dl.google.com/android/repository/android-ndk-${NDK_RELEASE}-darwin.dmg"
-          
-            # get the ndk
-            curl -L "$URL" -o ndk.dmg
+          sudo apt-get update
+          sudo apt-get install -y cmake meson pkg-config ninja-build python3 python3-pip
 
-      - name: Install Android NDK
+      - name: Download and Extract Android NDK
         run: |
-            INSTALL_DIR="$HOME/android-ndk"
-            MOUNT_DIR=$(mktemp -d)
+            NDK_RELEASE=r29
           
-            # attach the .dmg
-            hdiutil attach ndk.dmg -mountpoint "MOUNT_DIR"
+            # url pointing to download
+            URL=https://dl.google.com/android/repository/android-ndk-${NDK_RELEASE}-linux.zip
           
-            # copy the .app
-            sudo cp -rf "MOUNT_DIR"/*.app "$INSTALL_DIR"
+            # download ndk into ndk.zip
+            curl -L "${URL}" -o ndk.zip
           
-            # unmount .dmg
-            hdiutil detach "MOUNT_DIR" -quiet
-    
-            # remove the temp MOUNT_DIR
-            rm -rf "MOUNT_DIR"
+            # extract ndk contents
+            unzip ndk.zip -d ./ndk
           
-            # save it into the github env
-            echo "NDK_PATH=$NDK_TARGET" >> $GITHUB_ENV
-            echo "NDK_VERSION=29.0.14206865" >> $GITHUB_ENV'
+            FULL_NDK_PATH=$(realpath ./ndk/android-ndk-${NDK_RELEASE})
+          
+            echo "NDK_PATH=${FULL_NDK_PATH}" >> $GITHUB_ENV
+            
           
       - name: Assert NDK folder exists and is not empty
         run: |
-          if [ ! -d "NDK_PATH" ] || [ -z "$(ls -A "NDK_PATH")" ]; then
-            echo "ERROR: Download of android ndk didnt work, INSTALL_DIR is either empty or doesnt exist"
+          if [ ! -d "${NDK_PATH}" ] || [ -z "$(ls -A "${NDK_PATH}")" ]; then
+            echo "ERROR: Download of android ndk didnt work, ${NDK_PATH} is either empty or doesnt exist"
             exit 1
           fi
           
-          echo "Android NDK successfully installed at NDK_PATH"
+          echo "Android NDK successfully installed at ${NDK_PATH}"
 
-      - name: Run Script and Assert Folders Exists
+      - name: Run Script
         run: |
-          python main.py --android_ndk_version=${NDK_VERSION} --android_ndk_path=${NDK_PATH} --android_ndk_host=darwin‑x86_64 --auto_accept_licence=y
-          
+          python main.py --android_ndk_version=${NDK_VERSION} --android_ndk_path=${NDK_PATH} --android_ndk_host=linux‑x86_64 --auto_accept_licence=y
+
+      - name: Assert Folders Exists
+        run: |
           [ -d "source" ] && [ "$(ls -A source)" ] || { echo "Source folder is missing or empty"; exit 1; }
           [ -d "build" ] && [ "$(ls -A build)" ] || { echo "Build folder is missing or empty"; exit 2; }
           [ -d "install" ] && [ "$(ls -A install)" ] || { echo "Install folder is missing or empty"; exit 3; }
