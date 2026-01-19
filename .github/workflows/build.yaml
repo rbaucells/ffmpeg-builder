@@ -39,7 +39,7 @@ jobs:
           
             # save it into the github env
             echo "NDK_PATH=$NDK_TARGET" >> $GITHUB_ENV
-            echo "NDK_VERSION="29.0.14206865"" >> $GITHUB_ENV'
+            echo "NDK_VERSION=29.0.14206865" >> $GITHUB_ENV'
           
       - name: Assert NDK folder exists and is not empty
         run: |
