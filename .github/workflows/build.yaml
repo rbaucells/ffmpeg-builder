@@ -15,15 +15,15 @@ jobs:
         env:
           NDK_RELEASE: "r29"
         run: |
-            URL="https://dl.google.com/android/repository/android-ndk-${NDK_RELEASE}-darwin‑x86_64.zip"
+            URL="https://dl.google.com/android/repository/android-ndk-${NDK_RELEASE}-darwin.dmg"
           
             # get the ndk
             curl -L "$URL" -o ndk.dmg
 
       - name: Install Android NDK
-        env:
-          INSTALL_DIR: "$HOME/android-ndk"
         run: |
+            INSTALL_DIR="$HOME/android-ndk"
+          
             # mount the dmg
             MOUNT_DIR=$(hdiutil attach ndk.dmg -nobrowse | grep "/Volumes/" | awk '{print $3}')
           
