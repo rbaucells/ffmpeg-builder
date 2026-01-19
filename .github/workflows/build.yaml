@@ -23,13 +23,19 @@ jobs:
       - name: Install Android NDK
         run: |
             INSTALL_DIR="$HOME/android-ndk"
+            MOUNT_DIR=$(mktemp -d)
           
-            # mount the dmg
-            MOUNT_DIR=$(hdiutil attach ndk.dmg -nobrowse | grep "/Volumes/" | awk '{print $3}')
+            # attach the .dmg
+            hdiutil attach ndk.dmg -mountpoint "MOUNT_DIR"
           
-            mkdir -p $INSTALL_DIR
-            cp -R "$MOUNT_DIR"/* "$INSTALL_DIR"
-            hdiutil detach "$MOUNT_DIR"
+            # copy the .app
+            sudo cp -rf "MOUNT_DIR"/*.app "$INSTALL_DIR"
+          
+            # unmount .dmg
+            hdiutil detach "MOUNT_DIR" -quiet
+    
+            # remove the temp MOUNT_DIR
+            rm -rf "MOUNT_DIR"
           
             # save it into the github env
             echo "NDK_PATH=$NDK_TARGET" >> $GITHUB_ENV

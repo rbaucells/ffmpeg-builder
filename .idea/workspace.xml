@@ -12,7 +12,7 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="55a63d55-d4a8-4d21-92ee-ed0690307f31" name="Changes" comment="Updated workflow to fix wrong android ndk download process">
+    <list default="true" id="55a63d55-d4a8-4d21-92ee-ed0690307f31" name="Changes" comment="Updated workflow url">
       <change beforePath="$PROJECT_DIR$/.github/workflows/build.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/build.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
@@ -256,7 +256,15 @@
       <option name="project" value="LOCAL" />
       <updated>1768798748284</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="Updated workflow url">
+      <option name="closed" value="true" />
+      <created>1768798928264</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1768798928264</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -302,7 +310,8 @@
     <MESSAGE value="Added github worflow" />
     <MESSAGE value="Fixed github workflow syntax error in brew dependency installation" />
     <MESSAGE value="Updated workflow to fix wrong android ndk download process" />
-    <option name="LAST_COMMIT_MESSAGE" value="Updated workflow to fix wrong android ndk download process" />
+    <MESSAGE value="Updated workflow url" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updated workflow url" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
