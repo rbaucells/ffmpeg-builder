@@ -1,7 +1,5 @@
 on:
-  push:
-    branches:
-      - main
+    workflow_dispatch:
 jobs:
   build:
     runs-on: macos-latest
@@ -11,8 +9,31 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install dependencies
-        run: brew install cmake, meson, pkgconf, ninja
+        run: brew install cmake, meson, pkgconf, ninja, python
 
       - name: Install Android NDK
+        env:
+          NDK_VERSION: "r29"
         run: |
-          yes | sdkmanager --install "ndk;29.0.14206865"
+            URL="https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-darwin‑x86_64.zip"
+          
+            # get the ndk
+            curl -L "$URL" -o ndk.zip
+          
+            # unzip it
+            unzip -q ndk.zip -d ndk
+          
+            # find where its extracted
+            EXTRACTED=$(ls ndk | grep android-ndk)
+          
+            # save it into the github env
+            echo "NDK_PATH=ndk/$EXTRACTED" >> $GITHUB_ENV
+            echo "NDK_VERSION="29.0.14206865"" >> $GITHUB_ENV'
+
+      - name: Run Script and Assert Folders Exists
+        run: |
+          python main.py --android_ndk_version=${NDK_VERSION} --android_ndk_path=${NDK_PATH} --android_ndk_host=darwin‑x86_64 --auto_accept_licence=y
+          
+          [ -d "source" ] && [ "$(ls -A source)" ] || { echo "Source folder is missing or empty"; exit 1; }
+          [ -d "build" ] && [ "$(ls -A build)" ] || { echo "Build folder is missing or empty"; exit 2; }
+          [ -d "install" ] && [ "$(ls -A install)" ] || { echo "Install folder is missing or empty"; exit 3; }

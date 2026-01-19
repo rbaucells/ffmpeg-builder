@@ -12,10 +12,9 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="55a63d55-d4a8-4d21-92ee-ed0690307f31" name="Changes" comment="Added support for libgme, libmfx, and libkvazaar, fixed never actually enabling some libraries, and started prepping for multithreaded library building">
+    <list default="true" id="55a63d55-d4a8-4d21-92ee-ed0690307f31" name="Changes" comment="Added support for libmp3lame">
+      <change beforePath="$PROJECT_DIR$/.github/workflows/build.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/build.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/constants.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -225,7 +224,15 @@
       <option name="project" value="LOCAL" />
       <updated>1768759462488</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="Added support for libmp3lame">
+      <option name="closed" value="true" />
+      <created>1768796984086</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1768796984086</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -267,7 +274,8 @@
     <MESSAGE value="Added support for libuavs3d" />
     <MESSAGE value="Added support for libdavs2" />
     <MESSAGE value="Added support for libgme, libmfx, and libkvazaar, fixed never actually enabling some libraries, and started prepping for multithreaded library building" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added support for libgme, libmfx, and libkvazaar, fixed never actually enabling some libraries, and started prepping for multithreaded library building" />
+    <MESSAGE value="Added support for libmp3lame" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added support for libmp3lame" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
