@@ -11,24 +11,38 @@ jobs:
       - name: Install dependencies
         run: brew install cmake meson pkgconf ninja python
 
-      - name: Install Android NDK
+      - name: Download Android NDK Install Android NDK
         env:
-          NDK_VERSION: "r29"
+          NDK_RELEASE: "r29"
         run: |
-            URL="https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-darwin‑x86_64.zip"
+            URL="https://dl.google.com/android/repository/android-ndk-${NDK_RELEASE}-darwin‑x86_64.zip"
           
             # get the ndk
-            curl -L "$URL" -o ndk.zip
+            curl -L "$URL" -o ndk.dmg
+
+      - name: Install Android NDK
+        env:
+          INSTALL_DIR: "$HOME/android-ndk"
+        run: |
+            # mount the dmg
+            MOUNT_DIR=$(hdiutil attach ndk.dmg -nobrowse | grep "/Volumes/" | awk '{print $3}')
           
-            # unzip it
-            unzip -q ndk.zip -d ndk
-          
-            # find where its extracted
-            EXTRACTED=$(ls ndk | grep android-ndk)
+            mkdir -p $INSTALL_DIR
+            cp -R "$MOUNT_DIR"/* "$INSTALL_DIR"
+            hdiutil detach "$MOUNT_DIR"
           
             # save it into the github env
-            echo "NDK_PATH=ndk/$EXTRACTED" >> $GITHUB_ENV
+            echo "NDK_PATH=$NDK_TARGET" >> $GITHUB_ENV
             echo "NDK_VERSION="29.0.14206865"" >> $GITHUB_ENV'
+          
+      - name: Assert NDK folder exists and is not empty
+        run: |
+          if [ ! -d "NDK_PATH" ] || [ -z "$(ls -A "NDK_PATH")" ]; then
+            echo "ERROR: Download of android ndk didnt work, INSTALL_DIR is either empty or doesnt exist"
+            exit 1
+          fi
+          
+          echo "Android NDK successfully installed at NDK_PATH"
 
       - name: Run Script and Assert Folders Exists
         run: |
