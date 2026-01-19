@@ -1,4 +1,3 @@
-import os
 import shutil
 import subprocess
 import threading
@@ -143,7 +142,7 @@ def ffmpeg_libs() -> None:
     # get ffmpeg source code if not alr there
     if not os.path.exists(source_directory):
         print(f"Cloning ffmpeg source code at n{FFMPEG_VERSION}")
-        if os.system(f"git clone --branch n{FFMPEG_VERSION} git@github.com:FFmpeg/FFmpeg.git {source_directory}") != 0:
+        if os.system(f"git clone --branch n{FFMPEG_VERSION} https://github.com/FFmpeg/FFmpeg.git {source_directory}") != 0:
             raise ChildProcessError("git clone of ffmpeg failed")
 
     # build for each abi
@@ -292,7 +291,7 @@ def amf() -> None:
     # get ffmpeg source code if not alr there
     if not os.path.exists(source_directory):
         print(f"Cloning amf source code at v{AMF_VERSION}")
-        if os.system(f"git clone --branch v{AMF_VERSION} git@github.com:GPUOpen-LibrariesAndSDKs/AMF.git {source_directory}") != 0:
+        if os.system(f"git clone --branch v{AMF_VERSION} https://github.com/GPUOpen-LibrariesAndSDKs/AMF.git {source_directory}") != 0:
             raise ChildProcessError("git clone of amf failed")
 
     install_directory = os.path.join(CWD, "install", "all_architectures", "AMF")
@@ -318,7 +317,7 @@ def avisynth() -> None:
 
     if not os.path.exists(source_directory):
         print(f"Cloning avisynth source code at v{AVISYNTH_VERSION}")
-        if os.system(f"git clone --branch v{AVISYNTH_VERSION} git@github.com:AviSynth/AviSynthPlus.git {source_directory}") != 0:
+        if os.system(f"git clone --branch v{AVISYNTH_VERSION} https://github.com/AviSynth/AviSynthPlus.git {source_directory}") != 0:
             raise ChildProcessError("git clone of avisynth failed")
 
     # loop through abis to build
@@ -351,7 +350,7 @@ def chromaprint() -> None:
 
     if not os.path.exists(source_directory):
         print(f"Cloning chromaprint source code at v{CHROMAPRINT_VERSION}")
-        if os.system(f"git clone --branch v{CHROMAPRINT_VERSION} git@github.com:acoustid/chromaprint.git {source_directory}") != 0:
+        if os.system(f"git clone --branch v{CHROMAPRINT_VERSION} https://github.com/acoustid/chromaprint.git {source_directory}") != 0:
             raise ChildProcessError("git clone of chromaprint failed")
 
     # loop through abis to build
@@ -378,7 +377,7 @@ def libcodec2() -> None:
 
     if not os.path.exists(source_directory):
         print(f"Cloning libcodec2 source code at {LIBCODEC2_VERSION}")
-        if os.system(f"git clone --branch {LIBCODEC2_VERSION} git@github.com:drowe67/codec2.git {source_directory}") != 0:
+        if os.system(f"git clone --branch {LIBCODEC2_VERSION} https://github.com/drowe67/codec2.git {source_directory}") != 0:
             raise ChildProcessError("git clone of libcodec2 failed")
 
     # loop through abis to build
@@ -427,7 +426,7 @@ def libuavs3d() -> None:
 
     if not os.path.exists(source_directory):
         print(f"Cloning libuavs3d source code at v{LIBUAVS3_VERSION}")
-        if os.system(f"git clone --branch v{LIBUAVS3_VERSION} git@github.com:rbaucells/uavs3d.git {source_directory}") != 0:
+        if os.system(f"git clone --branch v{LIBUAVS3_VERSION} https://github.com/rbaucells/uavs3d.git {source_directory}") != 0:
             raise ChildProcessError("git clone of libuavs3d failed")
 
     if os.system(os.path.join(source_directory, "version.sh")) != 0:
@@ -453,7 +452,7 @@ def libdavs2() -> None:
 
     if not os.path.exists(source_directory):
         print(f"Cloning libdavs2 source code at {LIBDAVS2_VERSION}")
-        if os.system(f"git clone --branch {LIBDAVS2_VERSION} git@github.com:rbaucells/davs2.git {source_directory}") != 0:
+        if os.system(f"git clone --branch {LIBDAVS2_VERSION} https://github.com/rbaucells/davs2.git {source_directory}") != 0:
             raise ChildProcessError("git clone of libdavs2 failed")
 
 
@@ -519,7 +518,7 @@ def libgme() -> None:
 
     if not os.path.exists(source_directory):
         print(f"Cloning libgme source code at {LIBGME_VERSION}")
-        if os.system(f"git clone --branch {LIBGME_VERSION} git@github.com:libgme/game-music-emu.git {source_directory}") != 0:
+        if os.system(f"git clone --branch {LIBGME_VERSION} https://github.com/libgme/game-music-emu.git {source_directory}") != 0:
             raise ChildProcessError("git clone of libgme failed")
 
     # loop through abis to build
@@ -542,7 +541,7 @@ def libmfx() -> None:
 
     if not os.path.exists(source_directory):
         print(f"Cloning libmfx source code at {LIBMFX_VERSION}")
-        if os.system(f"git clone --branch {LIBMFX_VERSION} git@github.com:lu-zero/mfx_dispatch.git {source_directory}") != 0:
+        if os.system(f"git clone --branch {LIBMFX_VERSION} https://github.com/lu-zero/mfx_dispatch.git {source_directory}") != 0:
             raise ChildProcessError("git clone of libmfx failed")
 
     # loop through abis to build
@@ -562,7 +561,7 @@ def libkvazaar() -> None:
 
     if not os.path.exists(source_directory):
         print(f"Cloning libkvazaar source code at v{LIBKVAZAAR_VERSION}")
-        if os.system(f"git clone --branch v{LIBKVAZAAR_VERSION} git@github.com:ultravideo/kvazaar.git {source_directory}") != 0:
+        if os.system(f"git clone --branch v{LIBKVAZAAR_VERSION} https://github.com/ultravideo/kvazaar.git {source_directory}") != 0:
             raise ChildProcessError("git clone of libkvazaar failed")
 
     # loop through abis to build
@@ -677,7 +676,7 @@ def ffmpeg() -> None:
     # get ffmpeg source code if not alr there
     if not os.path.exists(source_directory):
         print(f"Cloning ffmpeg source code at n{FFMPEG_VERSION}")
-        if os.system(f"git clone --branch n{FFMPEG_VERSION} git@github.com:FFmpeg/FFmpeg.git {source_directory}") != 0:
+        if os.system(f"git clone --branch n{FFMPEG_VERSION} https://github.com/FFmpeg/FFmpeg.git {source_directory}") != 0:
             raise ChildProcessError("git clone of ffmpeg failed")
 
     # build for each abi

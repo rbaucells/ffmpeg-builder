@@ -3,6 +3,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: cimg/android:2026.01.1-ndk
 
     steps:
       - name: Get Source Code
@@ -11,38 +13,20 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake meson pkg-config ninja-build python3 python3-pip
-
-      - name: Download and Extract Android NDK
-        run: |
-            NDK_RELEASE=r29
           
-            # url pointing to download
-            URL=https://dl.google.com/android/repository/android-ndk-${NDK_RELEASE}-linux.zip
+          # things to make tzdata not annoy us
+          export DEBIAN_FRONTEND=noninteractive
+          sudo ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
           
-            # download ndk into ndk.zip
-            curl -L "${URL}" -o ndk.zip
-          
-            # extract ndk contents
-            unzip ndk.zip -d ./ndk
-          
-            FULL_NDK_PATH=$(realpath ./ndk/android-ndk-${NDK_RELEASE})
-          
-            echo "NDK_PATH=${FULL_NDK_PATH}" >> $GITHUB_ENV
-            
-          
-      - name: Assert NDK folder exists and is not empty
-        run: |
-          if [ ! -d "${NDK_PATH}" ] || [ -z "$(ls -A "${NDK_PATH}")" ]; then
-            echo "ERROR: Download of android ndk didnt work, ${NDK_PATH} is either empty or doesnt exist"
-            exit 1
-          fi
-          
-          echo "Android NDK successfully installed at ${NDK_PATH}"
+          sudo apt-get install -y cmake meson pkg-config ninja-build python3 python3-pip curl unzip
 
       - name: Run Script
         run: |
-          python main.py --android_ndk_version=${NDK_VERSION} --android_ndk_path=${NDK_PATH} --android_ndk_host=linux‑x86_64 --auto_accept_licence=y
+          # set env versions
+          NDK_VERSION="29.0.14206865"
+          NDK_PATH="/home/circleci/android-sdk/ndk/${NDK_VERSION}/"
+          
+          python main.py --android_ndk_version=${NDK_VERSION} --android_ndk_path=${NDK_PATH} --android_ndk_host=linux-x86_64 --auto_accept_licence=y
 
       - name: Assert Folders Exists
         run: |
