@@ -28,6 +28,8 @@ def get_args() -> Namespace:
     parser.add_argument("--libgme_version", type=str, default=None)
     parser.add_argument("--libmfx_version", type=str, default=None)
     parser.add_argument("--libkvazaar_version", type=str, default=None)
+    parser.add_argument("--libmp3lame_version", type=str, default=None)
+
     parser.add_argument("--auto_accept_licence", type=str, default=None)
 
     return parser.parse_args()
@@ -68,6 +70,7 @@ LIBDAVS2_VERSION: str = get_option(args.libdavs2_version, "LIBDAVS2_VERSION", "1
 LIBGME_VERSION: str = get_option(args.libgme_version, "LIBGME_VERSION", "0.6.4")
 LIBMFX_VERSION: str = get_option(args.libmfx_version, "LIBMFX_VERSION", "1.35.1")
 LIBKVAZAAR_VERSION: str = get_option(args.libkvazaar_version, "LIBKVAZAAR_VERSION", "2.3.2")
+LIBMP3LAME_VERSION: str = get_option(args.libmp3lame_version, "LIBMP3LAME_VERSION", "3.99.5")
 
 # options
 AUTO_ACCEPT_LICENCE: bool = get_option(args.auto_accept_licence, "AUTO_ACCEPT_LICENCE", "yes").lower() in ["yes", "on", "1", "y"]
@@ -75,16 +78,17 @@ AUTO_ACCEPT_LICENCE: bool = get_option(args.auto_accept_licence, "AUTO_ACCEPT_LI
 
 # external libraries for ffmpeg (libxavs2 is currently completely broken, I tried to fix it like I did libdavs2 and libuavs3d but to no avail)
 EXTERNAL_LIBS: list[str] = [
-    "libaom",
-    "amf",
-    "avisynth",
-    "chromaprint",
-    "libcodec2",
-    "libdav1d",
-    "libuavs3d",
-    "libdavs2",
-    "libgme",
-    "libkvazaar"
+    # "libaom",
+    # "amf",
+    # "avisynth",
+    # "chromaprint",
+    # "libcodec2",
+    # "libdav1d",
+    # "libuavs3d",
+    # "libdavs2",
+    # "libgme",
+    # "libkvazaar",
+    "libmp3lame"
 ]
 
 toolchain_path: str = os.path.join(NDK_PATH, "toolchains", "llvm", "prebuilt", HOST)

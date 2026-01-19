@@ -12,9 +12,8 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="55a63d55-d4a8-4d21-92ee-ed0690307f31" name="Changes" comment="Added support for libdavs2">
+    <list default="true" id="55a63d55-d4a8-4d21-92ee-ed0690307f31" name="Changes" comment="Added support for libgme, libmfx, and libkvazaar, fixed never actually enabling some libraries, and started prepping for multithreaded library building">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/abi.py" beforeDir="false" afterPath="$PROJECT_DIR$/abi.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/constants.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -218,7 +217,15 @@
       <option name="project" value="LOCAL" />
       <updated>1768594157042</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="Added support for libgme, libmfx, and libkvazaar, fixed never actually enabling some libraries, and started prepping for multithreaded library building">
+      <option name="closed" value="true" />
+      <created>1768759462488</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1768759462488</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -259,7 +266,8 @@
     <MESSAGE value="Refactored to use subprocess and allow cmd args and env variables" />
     <MESSAGE value="Added support for libuavs3d" />
     <MESSAGE value="Added support for libdavs2" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added support for libdavs2" />
+    <MESSAGE value="Added support for libgme, libmfx, and libkvazaar, fixed never actually enabling some libraries, and started prepping for multithreaded library building" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added support for libgme, libmfx, and libkvazaar, fixed never actually enabling some libraries, and started prepping for multithreaded library building" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

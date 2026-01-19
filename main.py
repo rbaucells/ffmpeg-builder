@@ -1,11 +1,10 @@
+import os
 import shutil
 import subprocess
 import threading
 
-from abi import ABI
-from dependencies import check_cmake, check_mason, check_pkg_config, check_gawk
 from constants import *
-import os
+from dependencies import check_cmake, check_mason, check_pkg_config, check_gawk
 
 library_flags_lock = threading.Lock()
 library_flags: list[str] = []
@@ -41,6 +40,7 @@ def build_using_cmake(abi: ABI, lib_name: str, build_directory: str, install_dir
 
     if pkg_config_paths is not None:
         env["PKG_CONFIG_PATH"] = ":".join(pkg_config_paths)
+        env["PKG_CONFIG_LIBDIR"] = ":".join(pkg_config_paths)
 
     print(f"Configuring {lib_name} for {abi_name} using cmake")
     subprocess.run(cmake_commands, env=env, check=True)
@@ -103,6 +103,7 @@ def build_using_meson(abi: ABI, lib_name: str, build_directory: str, install_dir
 
     if pkg_config_paths is not None:
         env["PKG_CONFIG_PATH"] = ":".join(pkg_config_paths)
+        env["PKG_CONFIG_LIBDIR"] = ":".join(pkg_config_paths)
 
     print(f"Setting up {lib_name} for {abi_name} using meson")
     subprocess.run(meson_commands, env=env, check=True)
@@ -230,6 +231,8 @@ def libraries() -> None:
                 libgme()
             case "libkvazaar":
                 libkvazaar()
+            case "libmp3lame":
+                libmp3lame()
             case _:
                 raise RuntimeError(f"Unsupported External Library: {lib}")
 
@@ -578,6 +581,95 @@ def libkvazaar() -> None:
     with library_flags_lock:
         library_flags.append("--enable-libkvazaar")
 
+def libmp3lame() -> None:
+    source_directory: str = os.path.join(CWD, "source", "libmp3lame")
+
+    if not os.path.exists(source_directory):
+        print(f"Making source directory for libmp3lame at {source_directory}")
+        os.makedirs(source_directory)
+
+        url = f"https://sourceforge.net/projects/lame/files/lame/{".".join(LIBMP3LAME_VERSION.split(".")[:2])}/lame-{LIBMP3LAME_VERSION}.tar.gz/download"
+        archive_path = os.path.join(source_directory, f"lame-{LIBMP3LAME_VERSION}.tar.gz")
+
+        # get source code from sourceforge
+        if os.system(f"curl -L -o {archive_path} {url}") != 0:
+            raise ChildProcessError("curl download of libmp3lame failed")
+
+        # extract the archive into source folder
+        if os.system(f"tar -xzf {archive_path} --strip-components=1 -C {source_directory}") != 0:
+            raise ChildProcessError(f"tar unzip of {archive_path} for libmp3lame failed")
+
+        if os.system(f"curl -L \"https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD\" -o {source_directory}/config.guess && curl -L \"https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD\" -o {source_directory}/config.sub") != 0:
+            raise ChildProcessError("download of newer gnu tools for libmp3lame failed")
+
+
+    for abi in ABIS:
+        android_abi_name = abi.android_arch_abi_name()
+
+        build_directory: str = os.path.join(CWD, "build", android_abi_name, "libmp3lame")
+        install_directory: str = os.path.join(CWD, "install", android_abi_name, "libmp3lame")
+        configure_directory: str = f"{os.path.join(source_directory)}/configure"
+
+        configure_commands: list[str] = [
+            configure_directory,
+            f"--prefix={install_directory}",
+            "--disable-gtktest",
+            "--disable-frontend",
+            f"--host={abi.cross_prefix.rstrip("-")}",
+            "--with-pic",
+            "--disable-mp3x",
+            "--disable-mp3rtp",
+            "--disable-analyzer-hooks"
+        ]
+
+        if STATIC_BUILD:
+            configure_commands.extend([
+                "--enable-shared=no",
+                "--enable-static=yes",
+            ])
+        else:
+            configure_commands.extend([
+                "--enable-shared=yes",
+                "--enable-static=no",
+            ])
+
+        env = os.environ.copy()
+
+        with abi.c_flags_lock, abi.ld_flags_lock:
+            env.update({
+                "CC": abi.cc,
+                "CFLAGS": " ".join(abi.c_flags),
+                "LDFLAGS": " ".join(abi.ld_flags),
+                "AR": os.path.join(toolchain_path, "bin", "llvm-ar"),
+                "STRIP": os.path.join(toolchain_path, "bin", "llvm-strip"),
+                "RANLIB": os.path.join(toolchain_path, "bin", "llvm-ranlib"),
+                "PKG_CONFIG": "pkg-config"
+            })
+
+        if not os.path.exists(build_directory):
+            print(f"Making build directory for libmp3lame for {android_abi_name} at {build_directory}")
+            os.makedirs(build_directory)
+
+        os.chdir(build_directory)
+
+        print(f"Configuring libmp3lame for {android_abi_name}")
+        subprocess.run(configure_commands, env=env, check=True)
+
+        print(f"Making libmp3lame for {android_abi_name} at {build_directory}")
+        subprocess.run(["make", "-j"], check=True)
+
+        print(f"Installing libmp3lame for {android_abi_name} to {install_directory}")
+        subprocess.run(["make", "install"], check=True)
+
+        # tell compiler and linker of ffmpeg where to look for this library's headers and libs, and tell pkg-config where to check for .pc files
+        with abi.c_flags_lock, abi.ld_flags_lock, abi.pkg_config_paths_lock, library_flags_lock:
+            abi.c_flags.append(f"-I{install_directory}/include")
+            abi.ld_flags.append(f"-L{install_directory}/lib")
+            abi.pkg_config_paths.append(os.path.join(install_directory, "lib", "pkgconfig"))
+            library_flags.append("--enable-libmp3lame")
+
+        print(f"Finished Configuring, Making, Installing libmp3lame for {android_abi_name}")
+
 
 def ffmpeg() -> None:
     source_directory: str = os.path.join(CWD, "source", "ffmpeg")
@@ -622,16 +714,17 @@ def ffmpeg() -> None:
                 "--enable-shared"
             ])
 
+        env = os.environ.copy()
+
+        if abi.pkg_config_paths is not None:
+            env["PKG_CONFIG_PATH"] = ":".join(abi.pkg_config_paths)
+            env["PKG_CONFIG_LIBDIR"] = ":".join(abi.pkg_config_paths)
+
         if not os.path.exists(build_directory):
             print(f"Making build directory for ffmpeg for {abi_name} at {build_directory}")
             os.makedirs(build_directory)
 
         os.chdir(build_directory)
-
-        env = os.environ.copy()
-
-        if abi.pkg_config_paths is not None:
-            env["PKG_CONFIG_PATH"] = ":".join(abi.pkg_config_paths)
 
         print(f"Configuring ffmpeg for {abi_name}")
         subprocess.run(configure_commands, env=env, check=True)
