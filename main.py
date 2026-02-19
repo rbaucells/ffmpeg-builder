@@ -45,7 +45,7 @@ def build_using_cmake(abi: ABI, lib_name: str, build_directory: str, install_dir
     subprocess.run(cmake_commands, env=env, check=True)
 
     print(f"Building {lib_name} for {abi_name} at {build_directory} using cmake")
-    subprocess.run(["cmake", "--build", build_directory, "-j"], check=True)
+    subprocess.run(["cmake", "--build", build_directory, f"-j{JOBS}"], check=True)
 
     print(f"Installing {lib_name} for {abi_name} to {install_directory} using cmake")
     subprocess.run(["cmake", "--install", build_directory], check=True)
@@ -131,6 +131,14 @@ def gen_meson_files() -> None:
 
 def main():
     check_pkg_config()
+
+    # env variables to make sure not to exceed jobs count
+    os.environ.update({
+        "MAKEFLAGS": f"-j{JOBS}",
+        "CMAKE_BUILD_PARALLEL_LEVEL": str(JOBS),
+        "NINJAFLAGS": f"-j{JOBS}"
+    })
+
     # ffmpeg_libs()
     libraries()
     ffmpeg()
@@ -191,7 +199,7 @@ def ffmpeg_libs() -> None:
         subprocess.run(configure_commands, check=True)
 
         print(f"Making ffmpeg libs for {abi_name} at {build_directory}")
-        subprocess.run(["make", "-j"], check=True)
+        subprocess.run(["make", f"-j{JOBS}"], check=True)
 
         print(f"Installing ffmpeg libs for {abi_name} to {install_directory}")
         subprocess.run(["make", "install"], check=True)
@@ -497,7 +505,7 @@ def libdavs2() -> None:
         os.chdir(build_directory)
 
         print(f"Making libdavs2 for {android_abi_name} at {build_directory}")
-        subprocess.run(["make", "-j"], check=True)
+        subprocess.run(["make", f"-j{JOBS}"], check=True)
 
         print(f"Installing libdavs2 for {android_abi_name} to {install_directory}")
         subprocess.run(["make", "install"], check=True)
@@ -655,7 +663,7 @@ def libmp3lame() -> None:
         subprocess.run(configure_commands, env=env, check=True)
 
         print(f"Making libmp3lame for {android_abi_name} at {build_directory}")
-        subprocess.run(["make", "-j"], check=True)
+        subprocess.run(["make", f"-j{JOBS}"], check=True)
 
         print(f"Installing libmp3lame for {android_abi_name} to {install_directory}")
         subprocess.run(["make", "install"], check=True)
@@ -729,7 +737,7 @@ def ffmpeg() -> None:
         subprocess.run(configure_commands, env=env, check=True)
 
         print(f"Making ffmpeg for {abi_name} at {build_directory}")
-        subprocess.run(["make", "-j"], check=True)
+        subprocess.run(["make", f"-j{JOBS}"], check=True)
 
         print(f"Installing ffmpeg for {abi_name} to {install_directory}")
         subprocess.run(["make", "install"], check=True)

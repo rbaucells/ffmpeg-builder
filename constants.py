@@ -32,6 +32,8 @@ def get_args() -> Namespace:
 
     parser.add_argument("--auto_accept_licence", type=str, default=None)
 
+    parser.add_argument("--jobs", type=str, default=None)
+
     return parser.parse_args()
 
 
@@ -74,7 +76,7 @@ LIBMP3LAME_VERSION: str = get_option(args.libmp3lame_version, "LIBMP3LAME_VERSIO
 
 # options
 AUTO_ACCEPT_LICENCE: bool = get_option(args.auto_accept_licence, "AUTO_ACCEPT_LICENCE", "yes").lower() in ["yes", "on", "1", "y"]
-
+JOBS: str = get_option(args.jobs, "JOBS", "4")
 
 # external libraries for ffmpeg (libxavs2 is currently completely broken, I tried to fix it like I did libdavs2 and libuavs3d but to no avail)
 EXTERNAL_LIBS: list[str] = [
@@ -98,7 +100,7 @@ CWD: str = os.getcwd()
 # ABIS to Build for
 ABIS: list[ABI] = [
     ABI("arm", "arm-linux-androideabi-", os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang"), os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang++")),
-    # ABI("aarch64", "aarch64-linux-android-", os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang++")),
-    # ABI("x86", "i686-linux-android-", os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang++"), ["--disable-asm", f"--x86asmexe={os.path.join(toolchain_path, "bin", "yasm")}"]),
-    # ABI("x86_64", "x86_64-linux-android-", os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang++"))
+    ABI("aarch64", "aarch64-linux-android-", os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang++")),
+    ABI("x86", "i686-linux-android-", os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang++"), ["--disable-asm", f"--x86asmexe={os.path.join(toolchain_path, "bin", "yasm")}"]),
+    ABI("x86_64", "x86_64-linux-android-", os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang++"))
 ]
