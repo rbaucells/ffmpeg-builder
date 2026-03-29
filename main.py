@@ -3,7 +3,7 @@ import subprocess
 import threading
 
 from constants import *
-from dependencies import check_cmake, check_mason, check_pkg_config, check_gawk, check_nasm
+from dependencies import check_cmake, check_mason, check_pkg_config, check_gawk
 
 library_flags_lock = threading.Lock()
 library_flags: list[str] = []

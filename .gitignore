@@ -2,3 +2,4 @@ build
 install
 source
 .venv
+.idea
