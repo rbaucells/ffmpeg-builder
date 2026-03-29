@@ -3,7 +3,7 @@ import subprocess
 import threading
 
 from constants import *
-from dependencies import check_cmake, check_mason, check_pkg_config, check_gawk
+from dependencies import check_cmake, check_mason, check_pkg_config, check_gawk, check_nasm
 
 library_flags_lock = threading.Lock()
 library_flags: list[str] = []
@@ -669,10 +669,12 @@ def libmp3lame() -> None:
         subprocess.run(["make", "install"], check=True)
 
         # tell compiler and linker of ffmpeg where to look for this library's headers and libs, and tell pkg-config where to check for .pc files
-        with abi.c_flags_lock, abi.ld_flags_lock, abi.pkg_config_paths_lock, library_flags_lock:
+        with abi.c_flags_lock, abi.ld_flags_lock, abi.pkg_config_paths_lock:
             abi.c_flags.append(f"-I{install_directory}/include")
             abi.ld_flags.append(f"-L{install_directory}/lib")
             abi.pkg_config_paths.append(os.path.join(install_directory, "lib", "pkgconfig"))
+
+        with library_flags_lock:
             library_flags.append("--enable-libmp3lame")
 
         print(f"Finished Configuring, Making, Installing libmp3lame for {android_abi_name}")
