@@ -1,5 +1,7 @@
 import threading
 
+from constants import STATIC_BUILD
+
 
 class ABI:
     def __init__(self, arch: str, cross_prefix: str, cc: str, cxx: str, extra_flags: list[str] | None = None):
@@ -12,10 +14,13 @@ class ABI:
         self.c_flags = ["-O3", "-fPIC"]
         self.c_flags_lock = threading.Lock()
         self.ld_flags = ["-Wl,-z,max-page-size=16384", "-lm"]
+
+        if STATIC_BUILD:
+            self.ld_flags += ["-static"]
+
         self.ld_flags_lock = threading.Lock()
         self.pkg_config_paths = []
         self.pkg_config_paths_lock = threading.Lock()
-
 
     def command(self) -> list[str]:
         result: list[str] = [

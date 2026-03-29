@@ -84,7 +84,7 @@ EXTERNAL_LIBS: list[str] = [
     "amf",
     "avisynth",
     "chromaprint",
-    "libcodec2",
+    # "libcodec2",
     "libdav1d",
     "libuavs3d",
     "libdavs2",

@@ -12,9 +12,9 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="55a63d55-d4a8-4d21-92ee-ed0690307f31" name="Changes" comment="Remove x86_64 support as well because it dont work either">
+    <list default="true" id="55a63d55-d4a8-4d21-92ee-ed0690307f31" name="Changes" comment="Really fixed libmp3lame putting multiple --enable-libmp3lame into configure">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abi.py" beforeDir="false" afterPath="$PROJECT_DIR$/abi.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -355,7 +355,23 @@
       <option name="project" value="LOCAL" />
       <updated>1774806539709</updated>
     </task>
-    <option name="localTasksCounter" value="27" />
+    <task id="LOCAL-00027" summary="Fixed some warnings of unused variables">
+      <option name="closed" value="true" />
+      <created>1774807158421</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1774807158421</updated>
+    </task>
+    <task id="LOCAL-00028" summary="Really fixed libmp3lame putting multiple --enable-libmp3lame into configure">
+      <option name="closed" value="true" />
+      <created>1774820529037</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1774820529037</updated>
+    </task>
+    <option name="localTasksCounter" value="29" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -385,8 +401,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Changed lots of things, added amf support, fixed not configuring" />
-    <MESSAGE value="Fixed some things" />
     <MESSAGE value="Fixes for things" />
     <MESSAGE value="Added avisynth support" />
     <MESSAGE value="Added chromaprint support" />
@@ -410,7 +424,9 @@
     <MESSAGE value="Update gitignore" />
     <MESSAGE value="Disable x86 build support because apple silicon no support anymore" />
     <MESSAGE value="Remove x86_64 support as well because it dont work either" />
-    <option name="LAST_COMMIT_MESSAGE" value="Remove x86_64 support as well because it dont work either" />
+    <MESSAGE value="Fixed some warnings of unused variables" />
+    <MESSAGE value="Really fixed libmp3lame putting multiple --enable-libmp3lame into configure" />
+    <option name="LAST_COMMIT_MESSAGE" value="Really fixed libmp3lame putting multiple --enable-libmp3lame into configure" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
