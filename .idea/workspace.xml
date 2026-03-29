@@ -12,11 +12,9 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="55a63d55-d4a8-4d21-92ee-ed0690307f31" name="Changes" comment="Update gitignore">
-      <change beforePath="$PROJECT_DIR$/.idea/ffmpeg-builder.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/ffmpeg-builder.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="55a63d55-d4a8-4d21-92ee-ed0690307f31" name="Changes" comment="Remove x86_64 support as well because it dont work either">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/constants.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -341,7 +339,23 @@
       <option name="project" value="LOCAL" />
       <updated>1774804288737</updated>
     </task>
-    <option name="localTasksCounter" value="25" />
+    <task id="LOCAL-00025" summary="Disable x86 build support because apple silicon no support anymore">
+      <option name="closed" value="true" />
+      <created>1774804935176</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1774804935176</updated>
+    </task>
+    <task id="LOCAL-00026" summary="Remove x86_64 support as well because it dont work either">
+      <option name="closed" value="true" />
+      <created>1774806539709</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1774806539709</updated>
+    </task>
+    <option name="localTasksCounter" value="27" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -371,7 +385,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Initial Commit" />
     <MESSAGE value="Changed lots of things, added amf support, fixed not configuring" />
     <MESSAGE value="Fixed some things" />
     <MESSAGE value="Fixes for things" />
@@ -395,7 +408,9 @@
     <MESSAGE value="Update default jobs size to 10" />
     <MESSAGE value="Fix libmp3lame addint to library flags multiple times" />
     <MESSAGE value="Update gitignore" />
-    <option name="LAST_COMMIT_MESSAGE" value="Update gitignore" />
+    <MESSAGE value="Disable x86 build support because apple silicon no support anymore" />
+    <MESSAGE value="Remove x86_64 support as well because it dont work either" />
+    <option name="LAST_COMMIT_MESSAGE" value="Remove x86_64 support as well because it dont work either" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

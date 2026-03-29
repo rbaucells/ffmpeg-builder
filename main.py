@@ -371,7 +371,6 @@ def chromaprint() -> None:
         build_using_cmake(abi, "chromaprint", build_directory, install_directory, source_directory, [
             "-DBUILD_TOOLS=OFF",
             "-DBUILD_TESTS=OFF",
-            "-DBUILD_EXAMPLES=OFF",
             f"-DKISSFFT_SOURCE_DIR={os.path.join(source_directory, "src", "3rdparty", "kissfft")}",
         ])
 
@@ -582,7 +581,6 @@ def libkvazaar() -> None:
         build_using_cmake(abi, "libkvazaar", build_directory, install_directory, source_directory, [
             "-DBUILD_TESTS=OFF",
             "-DBUILD_KVAZAAR_BINARY=OFF",
-            "-DCRYPTOPP_BUILD_TESTING=OFF"
         ])
 
     with library_flags_lock:
