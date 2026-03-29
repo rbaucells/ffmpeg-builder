@@ -672,10 +672,11 @@ def libmp3lame() -> None:
             abi.ld_flags.append(f"-L{install_directory}/lib")
             abi.pkg_config_paths.append(os.path.join(install_directory, "lib", "pkgconfig"))
 
-        with library_flags_lock:
-            library_flags.append("--enable-libmp3lame")
 
         print(f"Finished Configuring, Making, Installing libmp3lame for {android_abi_name}")
+
+    with library_flags_lock:
+        library_flags.append("--enable-libmp3lame")
 
 
 def ffmpeg() -> None:
