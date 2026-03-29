@@ -76,7 +76,7 @@ LIBMP3LAME_VERSION: str = get_option(args.libmp3lame_version, "LIBMP3LAME_VERSIO
 
 # options
 AUTO_ACCEPT_LICENCE: bool = get_option(args.auto_accept_licence, "AUTO_ACCEPT_LICENCE", "yes").lower() in ["yes", "on", "1", "y"]
-JOBS: str = get_option(args.jobs, "JOBS", "4")
+JOBS: str = get_option(args.jobs, "JOBS", "10")
 
 # external libraries for ffmpeg (libxavs2 is currently completely broken, I tried to fix it like I did libdavs2 and libuavs3d but to no avail)
 EXTERNAL_LIBS: list[str] = [
