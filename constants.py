@@ -80,16 +80,16 @@ JOBS: str = get_option(args.jobs, "JOBS", "10")
 
 # external libraries for ffmpeg (libxavs2 is currently completely broken, I tried to fix it like I did libdavs2 and libuavs3d but to no avail)
 EXTERNAL_LIBS: list[str] = [
-    # "libaom",
-    # "amf",
-    # "avisynth",
-    # "chromaprint",
-    # "libcodec2",
-    # "libdav1d",
-    # "libuavs3d",
-    # "libdavs2",
-    # "libgme",
-    # "libkvazaar",
+    "libaom",
+    "amf",
+    "avisynth",
+    "chromaprint",
+    "libcodec2",
+    "libdav1d",
+    "libuavs3d",
+    "libdavs2",
+    "libgme",
+    "libkvazaar",
     "libmp3lame"
 ]
 
@@ -101,6 +101,6 @@ CWD: str = os.getcwd()
 ABIS: list[ABI] = [
     ABI("arm", "arm-linux-androideabi-", os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang"), os.path.join(toolchain_path, "bin", f"armv7a-linux-androideabi{API}-clang++")),
     ABI("aarch64", "aarch64-linux-android-", os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"aarch64-linux-android{API}-clang++")),
-    ABI("x86", "i686-linux-android-", os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang++"), ["--disable-asm", f"--x86asmexe={os.path.join(toolchain_path, "bin", "yasm")}"]),
+    # ABI("x86", "i686-linux-android-", os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"i686-linux-android{API}-clang++"), ["--disable-asm", f"--x86asmexe={os.path.join(toolchain_path, "bin", "yasm")}"]),
     ABI("x86_64", "x86_64-linux-android-", os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang"), os.path.join(toolchain_path, "bin", f"x86_64-linux-android{API}-clang++"))
 ]
